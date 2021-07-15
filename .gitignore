@@ -51,7 +51,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-src/y.tab.h
-src/y.tab.c
-src/lex.yy.c
+y.tab.h
+y.tab.c
+lex.yy.c
 bin/*
