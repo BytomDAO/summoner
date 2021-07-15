@@ -46,7 +46,6 @@ int yyerror(char const *str) {
 
 int main(void) {
     if (yyparse()) {
-        fprintf(stderr, "parse error");
         exit(1);
     }
     return 0;
