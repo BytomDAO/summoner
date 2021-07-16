@@ -216,7 +216,7 @@ void printExprValue(ExprValue val)
         printf(">>>%lf\n", val.u.double_value);
         break;
     case EXPR_BOOL_VALUE:
-        printf(">>>%d\n", val.u.boolean_value);
+        printf(">>>%s\n", val.u.boolean_value ? "true" : "false");
         break;
     default:
         printf("invalid expression type when print expr value:%d", val.type);
