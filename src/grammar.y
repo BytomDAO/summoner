@@ -31,7 +31,8 @@ stmt_list:
 
 stmt:
      expr '\n' { printExprValue(evalExpression($1)); }
-
+     ;
+     
 expr:
            INT_LITERAL           { $$ = allocIntExpression($1); }
          | DOUBLE_LITERAL        { $$ = allocDoubleExpression($1); }
