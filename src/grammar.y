@@ -1,21 +1,27 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "src/summoner.h"
+#include "src/interpreter.h"
 
 int yylex();
 int yyerror(const char *s);
 %}
 
 %union {
-    double double_value;
+    double      double_value;
+    int         int_value;
+    struct Expression* expression;
 }
 
 %token <double_value> DOUBLE_LITERAL
-%token CR LP RP
-%left ADD SUB
-%left MUL DIV
+%token <int_value> INT_LITERAL
+%token '\n' '(' ')'
+%left '+' '-'
+%left '*' '/'
+%nonassoc MINUS
 
-%type <double_value> expr
+%type <expression> expr
 
 %%
 stmt_list:
@@ -24,17 +30,17 @@ stmt_list:
         ;
 
 stmt:
-     expr CR {
-         printf(">>%lf\n", $1);
-     }
+     expr '\n' { printExprValue(evalExpression($1)); }
 
 expr:
-           DOUBLE_LITERAL { $$ = $1; }
-         | expr ADD expr  { $$ = $1 + $3; }
-         | expr SUB expr  { $$ = $1 - $3; }
-         | expr MUL expr  { $$ = $1 * $3; }
-         | expr DIV expr  { $$ = $1 / $3; }
-         | LP expr RP     { $$ = $2; }
+           INT_LITERAL           { $$ = allocIntExpression($1); }
+         | DOUBLE_LITERAL        { $$ = allocDoubleExpression($1); }
+         | expr '+' expr         { $$ = allocBinaryExpression(ADD_EXPRESSION, $1, $3); }
+         | expr '-' expr         { $$ = allocBinaryExpression(SUB_EXPRESSION, $1, $3); }
+         | expr '*' expr         { $$ = allocBinaryExpression(MUL_EXPRESSION, $1, $3); }
+         | expr '/' expr         { $$ = allocBinaryExpression(DIV_EXPRESSION, $1, $3); }
+         | '(' expr ')'          { $$ = $2; }
+         | '-' expr %prec MINUS { $$ = allocUnaryExpression(MINUS_EXPRESSION, $2); }
          ;
 %%
 
