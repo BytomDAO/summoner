@@ -29,19 +29,19 @@ ExprValue evalIntBinaryExpression(ExpressionType type, int left, int right) {
 
 ExprValue evalDoubleBinaryExpression(ExpressionType type, double left, double right) {
     ExprValue v;
-    v.type = EXPR_INT_VALUE;
+    v.type = EXPR_DOUBLE_VALUE;
     switch (type) {
         case ADD_EXPRESSION:
-            v.u.int_value = left + right;
+            v.u.double_value = left + right;
             break;
         case SUB_EXPRESSION:
-            v.u.int_value = left - right;
+            v.u.double_value = left - right;
             break;
         case MUL_EXPRESSION:
-            v.u.int_value = left * right;
+            v.u.double_value = left * right;
             break;
         case DIV_EXPRESSION:
-            v.u.int_value = left / right;
+            v.u.double_value = left / right;
             break;
         default:
             printf("invalid expression type\n");
