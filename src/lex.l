@@ -5,9 +5,14 @@
 
 %%
 
-[+\-*/\(\)\n] {
+[+\-*/\(\)<>\n] {
     return *yytext;
 }
+
+">="    return GE;
+"<="    return LE;
+"=="    return EQ;
+"!="    return NE;
 
 [0-9]+\.[0-9]+ {
     double val;

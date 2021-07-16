@@ -17,6 +17,9 @@ int yyerror(const char *s);
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL
 %token '\n' '(' ')'
+
+%nonassoc EQ NE
+%nonassoc '>' '<' LE GE
 %left '+' '-'
 %left '*' '/'
 %nonassoc MINUS
@@ -32,7 +35,7 @@ stmt_list:
 stmt:
      expr '\n' { printExprValue(evalExpression($1)); }
      ;
-     
+
 expr:
            INT_LITERAL           { $$ = allocIntExpression($1); }
          | DOUBLE_LITERAL        { $$ = allocDoubleExpression($1); }
@@ -40,8 +43,14 @@ expr:
          | expr '-' expr         { $$ = allocBinaryExpression(SUB_EXPRESSION, $1, $3); }
          | expr '*' expr         { $$ = allocBinaryExpression(MUL_EXPRESSION, $1, $3); }
          | expr '/' expr         { $$ = allocBinaryExpression(DIV_EXPRESSION, $1, $3); }
+         | expr '>' expr         { $$ = allocBinaryExpression(GT_EXPRESSION, $1, $3); }
+         | expr GE expr          { $$ = allocBinaryExpression(GE_EXPRESSION, $1, $3); }
+         | expr '<' expr         { $$ = allocBinaryExpression(LT_EXPRESSION, $1, $3); }
+         | expr LE expr          { $$ = allocBinaryExpression(LE_EXPRESSION, $1, $3); }
+         | expr EQ expr          { $$ = allocBinaryExpression(EQ_EXPRESSION, $1, $3); }
+         | expr NE expr          { $$ = allocBinaryExpression(NE_EXPRESSION, $1, $3); }
          | '(' expr ')'          { $$ = $2; }
-         | '-' expr %prec MINUS { $$ = allocUnaryExpression(MINUS_EXPRESSION, $2); }
+         | '-' expr %prec MINUS  { $$ = allocUnaryExpression(MINUS_EXPRESSION, $2); }
          ;
 %%
 
