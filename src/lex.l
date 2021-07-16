@@ -5,7 +5,7 @@
 
 %%
 
-[+\-*/\(\)<>\n] {
+[+\-*/\(\)<>!\n] {
     return *yytext;
 }
 
@@ -13,6 +13,8 @@
 "<="    return LE;
 "=="    return EQ;
 "!="    return NE;
+"&&"    return AND;
+"||"    return OR;
 
 [0-9]+\.[0-9]+ {
     double val;

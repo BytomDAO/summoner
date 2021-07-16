@@ -18,11 +18,13 @@ int yyerror(const char *s);
 %token <int_value> INT_LITERAL
 %token '\n' '(' ')'
 
+%left AND OR
 %nonassoc EQ NE
 %nonassoc '>' '<' LE GE
 %left '+' '-'
 %left '*' '/'
 %nonassoc MINUS
+%nonassoc NOT
 
 %type <expression> expr
 
@@ -49,6 +51,9 @@ expr:
          | expr LE expr          { $$ = allocBinaryExpression(LE_EXPRESSION, $1, $3); }
          | expr EQ expr          { $$ = allocBinaryExpression(EQ_EXPRESSION, $1, $3); }
          | expr NE expr          { $$ = allocBinaryExpression(NE_EXPRESSION, $1, $3); }
+         | expr AND expr         { $$ = allocBinaryExpression(AND_EXPRESSION, $1, $3); }
+         | expr OR expr          { $$ = allocBinaryExpression(OR_EXPRESSION, $1, $3); }
+         | '!' expr %prec NOT    { $$ = allocUnaryExpression(NOT_EXPRESSION, $2); }
          | '(' expr ')'          { $$ = $2; }
          | '-' expr %prec MINUS  { $$ = allocUnaryExpression(MINUS_EXPRESSION, $2); }
          ;

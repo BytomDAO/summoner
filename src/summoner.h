@@ -39,7 +39,9 @@ typedef enum
     GE_EXPRESSION,  /* >= */
     LT_EXPRESSION,  /* < */
     LE_EXPRESSION,  /* <= */
-
+    AND_EXPRESSION, /* && */
+    OR_EXPRESSION,  /* || */
+    NOT_EXPRESSION, /* ! */
 } ExpressionType;
 
 typedef struct BinaryExpression BinaryExpression;

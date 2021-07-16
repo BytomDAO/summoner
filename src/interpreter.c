@@ -23,21 +23,27 @@ ExprValue evalIntBinaryExpression(ExpressionType type, int left, int right)
         v.u.int_value = left / right;
         break;
     case LT_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left < right;
         break;
     case LE_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left <= right;
         break;
     case GT_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left > right;
         break;
     case GE_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left >= right;
         break;
     case EQ_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left == right;
         break;
     case NE_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left != right;
         break;
     default:
@@ -66,25 +72,50 @@ ExprValue evalDoubleBinaryExpression(ExpressionType type, double left, double ri
         v.u.double_value = left / right;
         break;
     case LT_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left < right;
         break;
     case LE_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left <= right;
         break;
     case GT_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left > right;
         break;
     case GE_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left >= right;
         break;
     case EQ_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left == right;
         break;
     case NE_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
         v.u.boolean_value = left != right;
         break;
     default:
         printf("invalid expression type\n");
+        exit(1);
+    }
+    return v;
+}
+
+ExprValue evalBoolBinaryExpression(ExpressionType type, bool left, bool right)
+{
+    ExprValue v;
+    v.type = EXPR_BOOL_VALUE;
+    switch (type)
+    {
+    case AND_EXPRESSION:
+        v.u.boolean_value = left && right;
+        break;
+    case OR_EXPRESSION:
+        v.u.boolean_value = left || right;
+        break;
+    default:
+        printf("invalid expression type when eval bool value:%d\n", type);
         exit(1);
     }
     return v;
@@ -109,7 +140,18 @@ ExprValue evalBinaryExpression(ExpressionType type, BinaryExpression *binaryExpr
         return evalDoubleBinaryExpression(type, leftVal.u.double_value, rightVal.u.int_value);
     }
 
-    return evalDoubleBinaryExpression(type, leftVal.u.double_value, rightVal.u.double_value);
+    if (leftVal.type == EXPR_DOUBLE_VALUE && rightVal.type == EXPR_DOUBLE_VALUE)
+    {
+        return evalDoubleBinaryExpression(type, leftVal.u.double_value, rightVal.u.double_value);
+    }
+
+    if (leftVal.type == EXPR_BOOL_VALUE && rightVal.type == EXPR_BOOL_VALUE)
+    {
+        return evalBoolBinaryExpression(type, leftVal.u.boolean_value, rightVal.u.boolean_value);
+    }
+
+    printf("invalid expression type, left:%d, right:%d", leftVal.type, rightVal.type);
+    exit(1);
 }
 
 ExprValue evalExpression(Expression *expr)
@@ -136,6 +178,10 @@ ExprValue evalExpression(Expression *expr)
             v.u.double_value = -v.u.double_value;
         }
         return v;
+    case NOT_EXPRESSION:
+        v = evalExpression(expr->u.unary_expression);
+        v.u.boolean_value = !v.u.boolean_value;
+        return v;
     case ADD_EXPRESSION:
     case SUB_EXPRESSION:
     case MUL_EXPRESSION:
@@ -146,9 +192,11 @@ ExprValue evalExpression(Expression *expr)
     case GE_EXPRESSION:
     case EQ_EXPRESSION:
     case NE_EXPRESSION:
+    case AND_EXPRESSION:
+    case OR_EXPRESSION:
         return evalBinaryExpression(expr->type, expr->u.binary_expression);
     default:
-        printf("invalid expression type");
+        printf("invalid expression type when eval expression:%d\n", expr->type);
         exit(1);
     }
 }
@@ -165,8 +213,9 @@ void printExprValue(ExprValue val)
         break;
     case EXPR_BOOL_VALUE:
         printf(">>>%d\n", val.u.boolean_value);
+        break;
     default:
-        printf("invalid expression type");
+        printf("invalid expression type when print expr value:%d", val.type);
         exit(1);
     }
 }
