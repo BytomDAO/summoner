@@ -15,6 +15,8 @@
 "!="    return NE;
 "&&"    return AND;
 "||"    return OR;
+"true"  return TRUE;
+"false" return FALSE;
 
 [0-9]+\.[0-9]+ {
     double val;

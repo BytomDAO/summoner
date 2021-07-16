@@ -159,6 +159,10 @@ ExprValue evalExpression(Expression *expr)
     ExprValue v;
     switch (expr->type)
     {
+    case BOOL_EXPRESSION:
+        v.type = EXPR_BOOL_VALUE;
+        v.u.boolean_value = expr->u.boolean_value;
+        return v;
     case INT_EXPRESSION:
         v.type = EXPR_INT_VALUE;
         v.u.int_value = expr->u.int_value;
