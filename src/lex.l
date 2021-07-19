@@ -1,22 +1,39 @@
 %{
 #include <stdio.h>
+#include <string.h>
 #include "y.tab.h"
 %}
 
 %%
-"+"  return ADD;
-"-"  return SUB;
-"*"  return MUL;
-"/"  return DIV;
-"("  return LP;
-")"  return RP;
-"\n" return CR;
 
-([1-9][0-9]*)|0|([0-9]+\.[0-9]+) {
+[+\-*/\(\)<>!\n] {
+    return *yytext;
+}
+
+">="    return GE;
+"<="    return LE;
+"=="    return EQ;
+"!="    return NE;
+"&&"    return AND;
+"||"    return OR;
+
+"true"|"false" {
+    yylval.int_value = strcmp(yytext, "false");
+    return BOOL_LITERAL;
+}
+
+[0-9]+\.[0-9]+ {
     double val;
     sscanf(yytext, "%lf", &val);
     yylval.double_value = val;
     return DOUBLE_LITERAL;
+}
+
+([1-9][0-9]*)|0 {
+    int val;
+    sscanf(yytext, "%d", &val);
+    yylval.int_value = val;
+    return INT_LITERAL;
 }
 
 [ \t] ;
