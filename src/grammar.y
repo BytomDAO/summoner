@@ -9,17 +9,20 @@ int yyerror(const char *s);
 %}
 
 %union {
+    char        *identifier;
     double      double_value;
     int         int_value;
     struct Expression* expression;
+    struct Statement *statement;
 }
 
 %token <int_value> BOOL_LITERAL
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL
-%token '\n' '(' ')'
+%token <identifier> IDENTIFIER;
 
-
+%nonassoc '\n'
+%nonassoc '='
 %left AND OR
 %nonassoc EQ NE
 %nonassoc '>' '<' LE GE
@@ -29,6 +32,7 @@ int yyerror(const char *s);
 %nonassoc NOT
 
 %type <expression> expr
+%type <statement> stmt
 
 %%
 stmt_list:
@@ -37,13 +41,15 @@ stmt_list:
         ;
 
 stmt:
-     expr '\n' { printExprValue(evalExpression($1)); }
+       expr '\n'           { printExprValue(evalExpression($1)); }
+     | IDENTIFIER '=' expr { $$ = allocAssignStatement($1, $3); }
      ;
 
 expr:
            INT_LITERAL           { $$ = allocIntExpression($1); }
          | DOUBLE_LITERAL        { $$ = allocDoubleExpression($1); }
          | BOOL_LITERAL          { $$ = allocBoolExpression($1); }
+         | IDENTIFIER            { $$ = allocIdentifierExpression($1); }
          | expr '+' expr         { $$ = allocBinaryExpression(ADD_EXPRESSION, $1, $3); }
          | expr '-' expr         { $$ = allocBinaryExpression(SUB_EXPRESSION, $1, $3); }
          | expr '*' expr         { $$ = allocBinaryExpression(MUL_EXPRESSION, $1, $3); }
@@ -57,8 +63,8 @@ expr:
          | expr AND expr         { $$ = allocBinaryExpression(AND_EXPRESSION, $1, $3); }
          | expr OR expr          { $$ = allocBinaryExpression(OR_EXPRESSION, $1, $3); }
          | '!' expr %prec NOT    { $$ = allocUnaryExpression(NOT_EXPRESSION, $2); }
-         | '(' expr ')'          { $$ = $2; }
          | '-' expr %prec MINUS  { $$ = allocUnaryExpression(MINUS_EXPRESSION, $2); }
+         | '(' expr ')'          { $$ = $2; }
          ;
 %%
 

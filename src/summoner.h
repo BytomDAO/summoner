@@ -27,6 +27,7 @@ typedef enum
     BOOL_EXPRESSION = 1,
     INT_EXPRESSION,
     DOUBLE_EXPRESSION,
+    IDENTIFIER_EXPRESSION,
     ADD_EXPRESSION,
     SUB_EXPRESSION,
     MUL_EXPRESSION,
@@ -42,18 +43,32 @@ typedef enum
     AND_EXPRESSION, /* && */
     OR_EXPRESSION,  /* || */
     NOT_EXPRESSION, /* ! */
-} ExpressionType;
+} ExpressionKind;
+
+typedef enum
+{
+    BOOL_TYPE,
+    INT_TYPE,
+    DOUBLE_TYPE,
+    STRING_TYPE,
+} BasicType;
+
+typedef struct TypeSpecifier
+{
+    BasicType basic_type;
+} TypeSpecifier;
 
 typedef struct BinaryExpression BinaryExpression;
 
 typedef struct Expression
 {
-    ExpressionType type;
+    ExpressionKind kind;
     union
     {
         bool boolean_value;
         int int_value;
         double double_value;
+        char *identifier;
         BinaryExpression *binary_expression;
         struct Expression *unary_expression;
     } u;
@@ -66,11 +81,46 @@ typedef struct BinaryExpression
     Expression *right;
 } BinaryExpression;
 
-Expression *allocExpression(ExpressionType type);
+Expression *allocExpression(ExpressionKind kind);
 Expression *allocIntExpression(int value);
 Expression *allocDoubleExpression(double value);
 Expression *allocBoolExpression(bool value);
-Expression *allocUnaryExpression(ExpressionType type, Expression *unaryExpr);
-Expression *allocBinaryExpression(ExpressionType type, Expression *left, Expression *right);
+Expression *allocIdentifierExpression(char *identifier);
+Expression *allocUnaryExpression(ExpressionKind kind, Expression *unaryExpr);
+Expression *allocBinaryExpression(ExpressionKind kind, Expression *left, Expression *right);
+
+typedef enum
+{
+    ASSIGN_STATEMENT = 1,
+    IF_STATEMENT,
+    FOR_STATEMENT,
+    RETURN_STATEMENT,
+    BREAK_STATEMENT,
+    CONTINUE_STATEMENT,
+} StatementKind;
+
+typedef struct AssignStatement
+{
+    char *variable;
+    Expression *operand;
+} AssignStatement;
+
+typedef struct Statement
+{
+    StatementKind kind;
+    union
+    {
+        AssignStatement *assign_s;
+    } u;
+} Statement;
+
+typedef struct StatementList
+{
+    Statement *statement;
+    struct StatementList *next;
+} StatementList;
+
+Statement *allocStatement(StatementKind kind);
+Statement *allocAssignStatement(char *variable, Expression *operand);
 
 #endif

@@ -36,6 +36,13 @@
     return INT_LITERAL;
 }
 
+[A-Za-z_][A-Za-z_0-9]* {
+  char *new_str = malloc(strlen(yytext) + 1);
+  strcpy(new_str, yytext);
+  yylval.identifier = new_str;
+  return IDENTIFIER;
+}
+
 [ \t] ;
 
 . {
