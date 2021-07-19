@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include <string.h>
 #include "y.tab.h"
 %}
 
@@ -15,8 +16,11 @@
 "!="    return NE;
 "&&"    return AND;
 "||"    return OR;
-"true"  return TRUE;
-"false" return FALSE;
+
+"true"|"false" {
+    yylval.int_value = strcmp(yytext, "false");
+    return BOOL_LITERAL;
+}
 
 [0-9]+\.[0-9]+ {
     double val;

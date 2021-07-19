@@ -11,11 +11,10 @@ int yyerror(const char *s);
 %union {
     double      double_value;
     int         int_value;
-    int        bool_value;
     struct Expression* expression;
 }
 
-%token <bool_value> TRUE FALSE
+%token <int_value> BOOL_LITERAL
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL
 %token '\n' '(' ')'
@@ -44,8 +43,7 @@ stmt:
 expr:
            INT_LITERAL           { $$ = allocIntExpression($1); }
          | DOUBLE_LITERAL        { $$ = allocDoubleExpression($1); }
-         | TRUE                  { $$ = allocBoolExpression(true); }
-         | FALSE                 { $$ = allocBoolExpression(false); }
+         | BOOL_LITERAL          { $$ = allocBoolExpression($1); }
          | expr '+' expr         { $$ = allocBinaryExpression(ADD_EXPRESSION, $1, $3); }
          | expr '-' expr         { $$ = allocBinaryExpression(SUB_EXPRESSION, $1, $3); }
          | expr '*' expr         { $$ = allocBinaryExpression(MUL_EXPRESSION, $1, $3); }
