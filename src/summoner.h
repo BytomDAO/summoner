@@ -45,19 +45,6 @@ typedef enum
     NOT_EXPRESSION, /* ! */
 } ExpressionKind;
 
-typedef enum
-{
-    BOOL_TYPE,
-    INT_TYPE,
-    DOUBLE_TYPE,
-    STRING_TYPE,
-} BasicType;
-
-typedef struct TypeSpecifier
-{
-    BasicType basic_type;
-} TypeSpecifier;
-
 typedef struct BinaryExpression BinaryExpression;
 
 typedef struct Expression
