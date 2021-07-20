@@ -55,9 +55,9 @@ stmt:
      ;
 
 if_stmt:
-          IF '(' bool_expr ')' block                       { $$ = allocIfStatement($3, $5, NULL, NULL); }
-        | IF '(' bool_expr ')' block ELSE block            { $$ = allocIfStatement($3, $5, NULL, $7); } 
-        | IF '(' bool_expr ')' block elseif_list           { $$ = allocIfStatement($3, $5, $6, NULL); }
+          IF '(' bool_expr ')' block                        { $$ = allocIfStatement($3, $5, NULL, NULL); }
+        | IF '(' bool_expr ')' block ELSE block             { $$ = allocIfStatement($3, $5, NULL, $7); } 
+        | IF '(' bool_expr ')' block elseif_list            { $$ = allocIfStatement($3, $5, $6, NULL); }
         | IF '(' bool_expr ')' block elseif_list ELSE block { $$ = allocIfStatement($3, $5, $6, $8); }
         ;
 
