@@ -6,16 +6,24 @@
 
 %%
 
-[+\-*/\(\)<>!\n] {
+[+\-*/\(\)<>!{}\n] {
     return *yytext;
 }
 
-">="    return GE;
-"<="    return LE;
-"=="    return EQ;
-"!="    return NE;
-"&&"    return AND;
-"||"    return OR;
+">="       return GE;
+"<="       return LE;
+"=="       return EQ;
+"!="       return NE;
+"&&"       return AND;
+"||"       return OR;
+"if"       return IF;
+"else"     return ELSE;
+"for"      return FOR;
+"nil"      return NIL;
+"func"     return FUNCTION;
+"return"   return RETURN;
+"break"    return BREAK;
+"continue" return CONTINUE;
 
 "true"|"false" {
     yylval.int_value = strcmp(yytext, "false");
