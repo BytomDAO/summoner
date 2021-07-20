@@ -4,7 +4,7 @@
 #include "interpreter.h"
 #include "summoner.h"
 
-ExprValue evalIntBinaryExpression(ExpressionType type, int left, int right)
+ExprValue evalIntBinaryExpression(ExpressionKind type, int left, int right)
 {
     ExprValue v;
     v.type = EXPR_INT_VALUE;
@@ -53,11 +53,11 @@ ExprValue evalIntBinaryExpression(ExpressionType type, int left, int right)
     return v;
 }
 
-ExprValue evalDoubleBinaryExpression(ExpressionType type, double left, double right)
+ExprValue evalDoubleBinaryExpression(ExpressionKind kind, double left, double right)
 {
     ExprValue v;
     v.type = EXPR_DOUBLE_VALUE;
-    switch (type)
+    switch (kind)
     {
     case ADD_EXPRESSION:
         v.u.double_value = left + right;
@@ -102,7 +102,7 @@ ExprValue evalDoubleBinaryExpression(ExpressionType type, double left, double ri
     return v;
 }
 
-ExprValue evalBoolBinaryExpression(ExpressionType type, bool left, bool right)
+ExprValue evalBoolBinaryExpression(ExpressionKind type, bool left, bool right)
 {
     ExprValue v;
     v.type = EXPR_BOOL_VALUE;
@@ -121,7 +121,7 @@ ExprValue evalBoolBinaryExpression(ExpressionType type, bool left, bool right)
     return v;
 }
 
-ExprValue evalBinaryExpression(ExpressionType type, BinaryExpression *binaryExpression)
+ExprValue evalBinaryExpression(ExpressionKind type, BinaryExpression *binaryExpression)
 {
     ExprValue leftVal = evalExpression(binaryExpression->left);
     ExprValue rightVal = evalExpression(binaryExpression->right);
@@ -157,7 +157,7 @@ ExprValue evalBinaryExpression(ExpressionType type, BinaryExpression *binaryExpr
 ExprValue evalExpression(Expression *expr)
 {
     ExprValue v;
-    switch (expr->type)
+    switch (expr->kind)
     {
     case BOOL_EXPRESSION:
         v.type = EXPR_BOOL_VALUE;
@@ -198,9 +198,9 @@ ExprValue evalExpression(Expression *expr)
     case NE_EXPRESSION:
     case AND_EXPRESSION:
     case OR_EXPRESSION:
-        return evalBinaryExpression(expr->type, expr->u.binary_expression);
+        return evalBinaryExpression(expr->kind, expr->u.binary_expression);
     default:
-        printf("invalid expression type when eval expression:%d\n", expr->type);
+        printf("invalid expression type when eval expression:%d\n", expr->kind);
         exit(1);
     }
 }
