@@ -45,8 +45,6 @@ typedef enum
     NOT_EXPRESSION, /* ! */
 } ExpressionKind;
 
-typedef struct BinaryExpression BinaryExpression;
-
 typedef struct Expression
 {
     ExpressionKind kind;
@@ -56,7 +54,7 @@ typedef struct Expression
         int int_value;
         double double_value;
         char *identifier;
-        BinaryExpression *binary_expression;
+        struct BinaryExpression *binary_expression;
         struct Expression *unary_expression;
     } u;
 
@@ -79,6 +77,7 @@ Expression *allocBinaryExpression(ExpressionKind kind, Expression *left, Express
 typedef enum
 {
     ASSIGN_STATEMENT = 1,
+    BLOCK_STATEMENT,
     IF_STATEMENT,
     FOR_STATEMENT,
     RETURN_STATEMENT,
@@ -98,6 +97,8 @@ typedef struct Statement
     union
     {
         AssignStatement *assign_s;
+        struct Block *block_s;
+        struct IfStatement *if_s;
     } u;
 } Statement;
 
@@ -107,7 +108,34 @@ typedef struct StatementList
     struct StatementList *next;
 } StatementList;
 
+typedef struct Block
+{
+    StatementList *statemen_list;
+} Block;
+
+typedef struct Elseif
+{
+    Expression *condition;
+    Block *block;
+    struct Elseif *next;
+} Elseif;
+
+typedef struct IfStatement
+{
+    Expression *condition;
+    Block *then_block;
+    Elseif *elseif_list;
+    Block *else_block;
+} IfStatement;
+
 Statement *allocStatement(StatementKind kind);
 Statement *allocAssignStatement(char *variable, Expression *operand);
+Statement *allocBlockStatement(Block *block);
+Statement *allocIfStatement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
+StatementList *allocStatementList(Statement *statement);
+StatementList *chainStatementList(StatementList *list, Statement *statement);
+Elseif *allocElseif(Expression *condition, Block *block);
+Elseif *chainElseifList(Elseif *list, Elseif *elseif);
+Block *allocBlock(StatementList *list);
 
 #endif
