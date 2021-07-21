@@ -43,8 +43,8 @@ int yyerror(const char *s);
 %%
 
 stmt_list:
-          stmt                {$$ = allocStatementList($1); }
-        | stmt_list '\n' stmt {$$ = chainStatementList($1, $3); }
+          stmt                    {$$ = allocStatementList($1); }
+        | stmt_list new_line stmt {$$ = chainStatementList($1, $3); }
         ;
 
 stmt:
@@ -71,8 +71,12 @@ elseif:
        ;
 
 block:
-         '{' stmt_list '}'   { $$ = allocBlock($2); }
-       | '{' '}'             { $$ = allocBlock(NULL); }
+         '{' stmt_list '}'                     { $$ = allocBlock($2); }
+       | '{' new_line stmt_list '}'            { $$ = allocBlock($3); }
+       | '{' stmt_list new_line '}'            { $$ = allocBlock($2); }
+       | '{' new_line stmt_list new_line '}'   { $$ = allocBlock($3); }
+       | '{' new_line '}'                      { $$ = allocBlock(NULL); }
+       | '{' '}'                               { $$ = allocBlock(NULL); }
      ;
 
 expr:
@@ -101,6 +105,10 @@ bool_expr:
            | '!' expr %prec NOT    { $$ = allocUnaryExpression(NOT_EXPRESSION, $2); }
            ;
 
+new_line:
+           '\n'
+         | new_line '\n'
+
 %%
 
 int yyerror(char const *str) {
@@ -109,9 +117,15 @@ int yyerror(char const *str) {
     return 0;
 }
 
-int main(void) {
-    if (yyparse()) {
-        exit(1);
+int main(int argc, char *argv[]) {
+    extern FILE *yyin;
+    yyin = fopen(argv[1], "r");
+    if(yyin==NULL)
+    {
+        printf("fail to open file:%s\n", argv[1]);
+    } else 
+    {
+        yyparse();
     }
     return 0;
 }
