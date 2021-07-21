@@ -23,7 +23,7 @@ int yyerror(const char *s);
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL
 %token <identifier> IDENTIFIER;
-%token FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL LF
+%token FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
 
 %type <expression> expr bool_expr
 %type <statement> stmt if_stmt
