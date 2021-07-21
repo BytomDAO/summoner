@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "src/ast.h"
 #include "src/summoner.h"
 #include "src/interpreter.h"
 
@@ -42,67 +43,71 @@ int yyerror(const char *s);
 
 %%
 
+ast:
+     stmt_list { finish_build_ast($1); }
+     ;
+
 stmt_list:
-          stmt                    {$$ = allocStatementList($1); }
-        | stmt_list new_line stmt {$$ = chainStatementList($1, $3); }
+          stmt                    {$$ = alloc_statement_list($1); }
+        | stmt_list new_line stmt {$$ = chain_statement_list($1, $3); }
         ;
 
 stmt:
        expr                { printExprValue(evalExpression($1)); }
-     | IDENTIFIER '=' expr { $$ = allocAssignStatement($1, $3); }
-     | block               { $$ = allocBlockStatement($1); }
+     | IDENTIFIER '=' expr { $$ = alloc_assign_statement($1, $3); }
+     | block               { $$ = alloc_block_statement($1); }
      | if_stmt
      ;
 
 if_stmt:
-          IF '(' bool_expr ')' block                        { $$ = allocIfStatement($3, $5, NULL, NULL); }
-        | IF '(' bool_expr ')' block ELSE block             { $$ = allocIfStatement($3, $5, NULL, $7); } 
-        | IF '(' bool_expr ')' block elseif_list            { $$ = allocIfStatement($3, $5, $6, NULL); }
-        | IF '(' bool_expr ')' block elseif_list ELSE block { $$ = allocIfStatement($3, $5, $6, $8); }
+          IF bool_expr block                        { $$ = alloc_if_statement($2, $3, NULL, NULL); }
+        | IF bool_expr block ELSE block             { $$ = alloc_if_statement($2, $3, NULL, $5); } 
+        | IF bool_expr block elseif_list            { $$ = alloc_if_statement($2, $3, $4, NULL); }
+        | IF bool_expr block elseif_list ELSE block { $$ = alloc_if_statement($2, $3, $4, $6); }
         ;
 
 elseif_list: 
              elseif
-           | elseif_list elseif { $$ = chainElseifList($1, $2); }
+           | elseif_list elseif { $$ = chain_else_if_list($1, $2); }
            ;
 
 elseif:
-       ELSE IF '(' bool_expr ')' block { $$ = allocElseif($4, $6); }
+       ELSE IF bool_expr block { $$ = alloc_else_if($3, $4); }
        ;
 
 block:
-         '{' stmt_list '}'                     { $$ = allocBlock($2); }
-       | '{' new_line stmt_list '}'            { $$ = allocBlock($3); }
-       | '{' stmt_list new_line '}'            { $$ = allocBlock($2); }
-       | '{' new_line stmt_list new_line '}'   { $$ = allocBlock($3); }
-       | '{' new_line '}'                      { $$ = allocBlock(NULL); }
-       | '{' '}'                               { $$ = allocBlock(NULL); }
+         '{' stmt_list '}'                     { $$ = alloc_block($2); }
+       | '{' new_line stmt_list '}'            { $$ = alloc_block($3); }
+       | '{' stmt_list new_line '}'            { $$ = alloc_block($2); }
+       | '{' new_line stmt_list new_line '}'   { $$ = alloc_block($3); }
+       | '{' new_line '}'                      { $$ = alloc_block(NULL); }
+       | '{' '}'                               { $$ = alloc_block(NULL); }
      ;
 
 expr:
-           INT_LITERAL           { $$ = allocIntExpression($1); }
-         | DOUBLE_LITERAL        { $$ = allocDoubleExpression($1); }
-         | BOOL_LITERAL          { $$ = allocBoolExpression($1); }
-         | IDENTIFIER            { $$ = allocIdentifierExpression($1); }
-         | expr '+' expr         { $$ = allocBinaryExpression(ADD_EXPRESSION, $1, $3); }
-         | expr '-' expr         { $$ = allocBinaryExpression(SUB_EXPRESSION, $1, $3); }
-         | expr '*' expr         { $$ = allocBinaryExpression(MUL_EXPRESSION, $1, $3); }
-         | expr '/' expr         { $$ = allocBinaryExpression(DIV_EXPRESSION, $1, $3); }
-         | '-' expr %prec MINUS  { $$ = allocUnaryExpression(MINUS_EXPRESSION, $2); }
+           INT_LITERAL           { $$ = alloc_int_expression($1); }
+         | DOUBLE_LITERAL        { $$ = alloc_double_expression($1); }
+         | BOOL_LITERAL          { $$ = alloc_bool_expression($1); }
+         | IDENTIFIER            { $$ = alloc_identifier_expression($1); }
+         | expr '+' expr         { $$ = alloc_binary_expression(ADD_EXPRESSION, $1, $3); }
+         | expr '-' expr         { $$ = alloc_binary_expression(SUB_EXPRESSION, $1, $3); }
+         | expr '*' expr         { $$ = alloc_binary_expression(MUL_EXPRESSION, $1, $3); }
+         | expr '/' expr         { $$ = alloc_binary_expression(DIV_EXPRESSION, $1, $3); }
+         | '-' expr %prec MINUS  { $$ = alloc_unary_expression(MINUS_EXPRESSION, $2); }
          | '(' expr ')'          { $$ = $2; }
          | bool_expr
          ;
 
 bool_expr:
-             expr '>' expr         { $$ = allocBinaryExpression(GT_EXPRESSION, $1, $3); }
-           | expr GE expr          { $$ = allocBinaryExpression(GE_EXPRESSION, $1, $3); }
-           | expr '<' expr         { $$ = allocBinaryExpression(LT_EXPRESSION, $1, $3); }
-           | expr LE expr          { $$ = allocBinaryExpression(LE_EXPRESSION, $1, $3); }
-           | expr EQ expr          { $$ = allocBinaryExpression(EQ_EXPRESSION, $1, $3); }
-           | expr NE expr          { $$ = allocBinaryExpression(NE_EXPRESSION, $1, $3); }
-           | expr AND expr         { $$ = allocBinaryExpression(AND_EXPRESSION, $1, $3); }
-           | expr OR expr          { $$ = allocBinaryExpression(OR_EXPRESSION, $1, $3); }
-           | '!' expr %prec NOT    { $$ = allocUnaryExpression(NOT_EXPRESSION, $2); }
+             expr '>' expr         { $$ = alloc_binary_expression(GT_EXPRESSION, $1, $3); }
+           | expr GE expr          { $$ = alloc_binary_expression(GE_EXPRESSION, $1, $3); }
+           | expr '<' expr         { $$ = alloc_binary_expression(LT_EXPRESSION, $1, $3); }
+           | expr LE expr          { $$ = alloc_binary_expression(LE_EXPRESSION, $1, $3); }
+           | expr EQ expr          { $$ = alloc_binary_expression(EQ_EXPRESSION, $1, $3); }
+           | expr NE expr          { $$ = alloc_binary_expression(NE_EXPRESSION, $1, $3); }
+           | expr AND expr         { $$ = alloc_binary_expression(AND_EXPRESSION, $1, $3); }
+           | expr OR expr          { $$ = alloc_binary_expression(OR_EXPRESSION, $1, $3); }
+           | '!' expr %prec NOT    { $$ = alloc_unary_expression(NOT_EXPRESSION, $2); }
            ;
 
 new_line:

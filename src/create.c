@@ -2,51 +2,51 @@
 #include <stdlib.h>
 #include "summoner.h"
 
-Expression *allocExpression(ExpressionKind kind)
+Expression *alloc_expression(ExpressionKind kind)
 {
     Expression *expr = malloc(sizeof(Expression));
     expr->kind = kind;
     return expr;
 }
 
-Expression *allocIntExpression(int value)
+Expression *alloc_int_expression(int value)
 {
-    Expression *expr = allocExpression(INT_EXPRESSION);
+    Expression *expr = alloc_expression(INT_EXPRESSION);
     expr->u.int_value = value;
     return expr;
 }
 
-Expression *allocDoubleExpression(double value)
+Expression *alloc_double_expression(double value)
 {
-    Expression *expr = allocExpression(DOUBLE_EXPRESSION);
+    Expression *expr = alloc_expression(DOUBLE_EXPRESSION);
     expr->u.double_value = value;
     return expr;
 }
 
-Expression *allocIdentifierExpression(char *identifier)
+Expression *alloc_identifier_expression(char *identifier)
 {
-    Expression *expr = allocExpression(IDENTIFIER_EXPRESSION);
+    Expression *expr = alloc_expression(IDENTIFIER_EXPRESSION);
     expr->u.identifier = identifier;
     return expr;
 }
 
-Expression *allocBoolExpression(bool value)
+Expression *alloc_bool_expression(bool value)
 {
-    Expression *expr = allocExpression(BOOL_EXPRESSION);
+    Expression *expr = alloc_expression(BOOL_EXPRESSION);
     expr->u.boolean_value = value;
     return expr;
 }
 
-Expression *allocUnaryExpression(ExpressionKind kind, Expression *unaryExpr)
+Expression *alloc_unary_expression(ExpressionKind kind, Expression *unaryExpr)
 {
-    Expression *expr = allocExpression(kind);
+    Expression *expr = alloc_expression(kind);
     expr->u.unary_expression = unaryExpr;
     return expr;
 }
 
-Expression *allocBinaryExpression(ExpressionKind kind, Expression *left, Expression *right)
+Expression *alloc_binary_expression(ExpressionKind kind, Expression *left, Expression *right)
 {
-    Expression *expr = allocExpression(kind);
+    Expression *expr = alloc_expression(kind);
     BinaryExpression *binary = malloc(sizeof(BinaryExpression));
     binary->left = left;
     binary->right = right;
@@ -54,24 +54,24 @@ Expression *allocBinaryExpression(ExpressionKind kind, Expression *left, Express
     return expr;
 }
 
-Statement *allocStatement(StatementKind kind)
+Statement *alloc_statement(StatementKind kind)
 {
     Statement *stmt = malloc(sizeof(Statement));
     stmt->kind = kind;
     return stmt;
 }
 
-Statement *allocAssignStatement(char *variable, Expression *operand)
+Statement *alloc_assign_statement(char *variable, Expression *operand)
 {
-    Statement *stmt = allocStatement(ASSIGN_STATEMENT);
+    Statement *stmt = alloc_statement(ASSIGN_STATEMENT);
     AssignStatement *assign_s = malloc(sizeof(AssignStatement));
     stmt->u.assign_s = assign_s;
     return stmt;
 }
 
-Statement *allocIfStatement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block)
+Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block)
 {
-    Statement *stmt = allocStatement(IF_STATEMENT);
+    Statement *stmt = alloc_statement(IF_STATEMENT);
     IfStatement *if_s = malloc(sizeof(IfStatement));
     if_s->condition = condition;
     if_s->then_block = then_block;
@@ -81,36 +81,36 @@ Statement *allocIfStatement(Expression *condition, Block *then_block, Elseif *el
     return stmt;
 }
 
-Statement *allocBlockStatement(Block *block)
+Statement *alloc_block_statement(Block *block)
 {
-    Statement *stmt = allocStatement(BLOCK_STATEMENT);
+    Statement *stmt = alloc_statement(BLOCK_STATEMENT);
     stmt->u.block_s = block;
     return stmt;
 }
 
-StatementList *allocStatementList(Statement *statement)
+StatementList *alloc_statement_list(Statement *statement)
 {
     StatementList *stmt_list = malloc(sizeof(StatementList));
     stmt_list->statement = statement;
     return stmt_list;
 }
 
-StatementList *chainStatementList(StatementList *list, Statement *statement)
+StatementList *chain_statement_list(StatementList *list, Statement *statement)
 {
     if (list == NULL)
     {
-        return allocStatementList(statement);
+        return alloc_statement_list(statement);
     }
 
     StatementList *pos;
     for (pos = list; pos->next; pos = pos->next)
         ;
 
-    pos->next = allocStatementList(statement);
+    pos->next = alloc_statement_list(statement);
     return list;
 }
 
-Elseif *allocElseif(Expression *condition, Block *block)
+Elseif *alloc_else_if(Expression *condition, Block *block)
 {
     Elseif *elseif = malloc(sizeof(Elseif));
     elseif->condition = condition;
@@ -118,7 +118,7 @@ Elseif *allocElseif(Expression *condition, Block *block)
     return elseif;
 }
 
-Elseif *chainElseifList(Elseif *list, Elseif *elseif)
+Elseif *chain_else_if_list(Elseif *list, Elseif *elseif)
 {
     if (list == NULL)
     {
@@ -133,7 +133,7 @@ Elseif *chainElseifList(Elseif *list, Elseif *elseif)
     return list;
 }
 
-Block *allocBlock(StatementList *list)
+Block *alloc_block(StatementList *list)
 {
     Block *block = malloc(sizeof(Block));
     block->statemen_list = list;

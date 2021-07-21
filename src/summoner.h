@@ -66,13 +66,13 @@ typedef struct BinaryExpression
     Expression *right;
 } BinaryExpression;
 
-Expression *allocExpression(ExpressionKind kind);
-Expression *allocIntExpression(int value);
-Expression *allocDoubleExpression(double value);
-Expression *allocBoolExpression(bool value);
-Expression *allocIdentifierExpression(char *identifier);
-Expression *allocUnaryExpression(ExpressionKind kind, Expression *unaryExpr);
-Expression *allocBinaryExpression(ExpressionKind kind, Expression *left, Expression *right);
+Expression *alloc_expression(ExpressionKind kind);
+Expression *alloc_int_expression(int value);
+Expression *alloc_double_expression(double value);
+Expression *alloc_bool_expression(bool value);
+Expression *alloc_identifier_expression(char *identifier);
+Expression *alloc_unary_expression(ExpressionKind kind, Expression *unaryExpr);
+Expression *alloc_binary_expression(ExpressionKind kind, Expression *left, Expression *right);
 
 typedef enum
 {
@@ -128,14 +128,14 @@ typedef struct IfStatement
     Block *else_block;
 } IfStatement;
 
-Statement *allocStatement(StatementKind kind);
-Statement *allocAssignStatement(char *variable, Expression *operand);
-Statement *allocBlockStatement(Block *block);
-Statement *allocIfStatement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
-StatementList *allocStatementList(Statement *statement);
-StatementList *chainStatementList(StatementList *list, Statement *statement);
-Elseif *allocElseif(Expression *condition, Block *block);
-Elseif *chainElseifList(Elseif *list, Elseif *elseif);
-Block *allocBlock(StatementList *list);
+Statement *alloc_statement(StatementKind kind);
+Statement *alloc_assign_statement(char *variable, Expression *operand);
+Statement *alloc_block_statement(Block *block);
+Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
+StatementList *alloc_statement_list(Statement *statement);
+StatementList *chain_statement_list(StatementList *list, Statement *statement);
+Elseif *alloc_else_if(Expression *condition, Block *block);
+Elseif *chain_else_if_list(Elseif *list, Elseif *elseif);
+Block *alloc_block(StatementList *list);
 
 #endif
