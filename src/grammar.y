@@ -43,10 +43,6 @@ int yyerror(const char *s);
 
 %%
 
-ast:
-     stmt_list { finish_build_ast($1); }
-     ;
-
 stmt_list:
           stmt                    {$$ = alloc_statement_list($1); }
         | stmt_list new_line stmt {$$ = chain_statement_list($1, $3); }
