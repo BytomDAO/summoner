@@ -18,6 +18,9 @@ int yyerror(const char *s);
     struct Block *block;
     struct Elseif *elseif;
     struct TypeSpecifier *type_specifier;
+    struct ParameterList *parameter_list;
+    struct Definition *definition;
+    struct DefinitionList *definition_list;
 }
 
 %token <int_value> BOOL_LITERAL
@@ -28,11 +31,14 @@ int yyerror(const char *s);
 %token BOOL_T INT_T DOUBLE_T STRING_T
 
 %type <expression> expr bool_expr
-%type <statement> stmt if_stmt declaration_stmt
+%type <statement> stmt if_stmt declaration_stmt variable_declaration
 %type <statement_list> stmt_list
 %type <block> block
 %type <elseif> elseif elseif_list
 %type <type_specifier> type_specifier
+%type <parameter_list> parameter_list paramter
+%type <definition> definition func_definition
+%type <definition_list> definition_list
 
 %nonassoc '=' DECL_ASSIGN
 %left AND OR
@@ -44,6 +50,36 @@ int yyerror(const char *s);
 %nonassoc NOT
 
 %%
+
+translation_unit:
+                   definition_list                   { add_definitions_to_compiler($1); }
+                |  definition_list new_line          { add_definitions_to_compiler($1); }
+                |  new_line definition_list          { add_definitions_to_compiler($2); }
+                |  new_line definition_list new_line { add_definitions_to_compiler($2); }
+                ;
+
+definition_list:
+                  definition                          { $$ = alloc_definition_list($1); }
+                | definition_list new_line definition { $$ = chain_definition_list($1, $3); }
+                ;
+
+definition:
+            func_definition
+          | variable_declaration { $$ = alloc_declaration_definition($1); }
+          ;
+
+func_definition:
+                 FUNCTION IDENTIFIER '(' parameter_list ')' type_specifier block { $$ = alloc_func_definition($2, $4, $6, $7); }
+                 ;
+
+parameter_list:
+                 paramter
+               | parameter_list ',' paramter { $$ = chain_parameter($1, $3); }
+               ;
+
+paramter:
+         IDENTIFIER type_specifier { $$ = alloc_parameter($2, $1); }
+         ;
 
 stmt_list:
           stmt                    {$$ = alloc_statement_list($1); }
@@ -59,11 +95,15 @@ stmt:
      ;
 
 declaration_stmt:
-                    VAR IDENTIFIER type_specifier          { $$ = alloc_declaration_stmt($2, $3, NULL); }
-                  | VAR IDENTIFIER type_specifier '=' expr { $$ = alloc_declaration_stmt($2, $3, $5); }
-                  | VAR IDENTIFIER '=' expr                { $$ = alloc_declaration_stmt($2, NULL, $4); }
-                  | IDENTIFIER DECL_ASSIGN expr            { $$ = alloc_declaration_stmt($1, NULL, $3); }
+                    IDENTIFIER DECL_ASSIGN expr            { $$ = alloc_declaration_stmt($1, NULL, $3); }
+                  | variable_declaration  
                   ;
+
+variable_declaration:
+                        VAR IDENTIFIER type_specifier          { $$ = alloc_declaration_stmt($2, $3, NULL); }
+                      | VAR IDENTIFIER type_specifier '=' expr { $$ = alloc_declaration_stmt($2, $3, $5); }
+                      | VAR IDENTIFIER '=' expr                { $$ = alloc_declaration_stmt($2, NULL, $4); }
+                      ;
 
 type_specifier:
                 BOOL_T   { $$ = alloc_type_specifier(BOOLEAN_TYPE, NULL); }
@@ -99,7 +139,7 @@ block:
                                          '}'   { $$ = close_block($<block>5, $3); }
        | '{' new_line '}'                      { $<block>$ = alloc_block(NULL); }
        | '{' '}'                               { $$ = alloc_block(NULL); }
-     ;
+       ;
 
 expr:
            INT_LITERAL           { $$ = alloc_int_expression($1); }

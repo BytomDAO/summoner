@@ -173,3 +173,74 @@ TypeSpecifier *alloc_type_specifier(BasicType type, char *identifier)
     type_s->identifier = identifier;
     return type_s;
 }
+
+ParameterList *alloc_parameter(TypeSpecifier *type, char *identifier)
+{
+    ParameterList *p = malloc(sizeof(ParameterList));
+    p->name = identifier;
+    p->type = type;
+    p->next = NULL;
+    return p;
+}
+
+ParameterList *chain_parameter(ParameterList *list, ParameterList *parameter)
+{
+    if (list == NULL)
+    {
+        return parameter;
+    }
+    ParameterList *pos;
+    for (pos = list; pos->next; pos = pos->next)
+        ;
+    pos->next = parameter;
+    return list;
+}
+
+Definition *alloc_definition(DefinitionKind kind)
+{
+    Definition *definition = malloc(sizeof(Definition));
+    definition->kind = kind;
+    return definition;
+}
+
+Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block)
+{
+    FuncDefinition *func_d = malloc(sizeof(FuncDefinition));
+    func_d->name = name;
+    func_d->parameters = parameters;
+    func_d->return_type = return_type;
+    func_d->block = block;
+
+    Definition *definition = alloc_definition(FUNC_DEFINITION);
+    definition->u.func_d = func_d;
+    return definition;
+}
+
+Definition *alloc_declaration_definition(Statement *declaration_stmt)
+{
+    Definition *definition = alloc_definition(DECLARATION_DEFINITION);
+    definition->u.declaration = declaration_stmt->u.decl_s;
+    return definition;
+}
+
+DefinitionList *alloc_definition_list(Definition *definition)
+{
+    DefinitionList *list = malloc(sizeof(DefinitionList));
+    list->definition = definition;
+    list->next = NULL;
+    return list;
+}
+
+DefinitionList *chain_definition_list(DefinitionList *list, Definition *definition)
+{
+    if (list == NULL)
+    {
+        list->next = alloc_definition_list(definition);
+        return list;
+    }
+    DefinitionList *pos;
+    for (pos = list; pos->next; pos = pos->next)
+        ;
+    pos->next = alloc_definition_list(definition);
+    return list;
+}

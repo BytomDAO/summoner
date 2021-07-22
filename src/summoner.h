@@ -108,6 +108,7 @@ typedef struct Declaration
     char *name;
     TypeSpecifier *type;
     Expression *initializer;
+    bool is_local;
 } Declaration;
 
 typedef struct AssignStatement
@@ -170,12 +171,61 @@ Block *alloc_block(StatementList *list);
 
 TypeSpecifier *alloc_type_specifier(BasicType type, char *identifier);
 
+typedef struct ParameterList
+{
+    char *name;
+    TypeSpecifier *type;
+    struct ParameterList *next;
+} ParameterList;
+
+ParameterList *alloc_parameter(TypeSpecifier *type, char *identifier);
+ParameterList *chain_parameter(ParameterList *list, ParameterList *parameter);
+
+typedef enum
+{
+    DECLARATION_DEFINITION = 1,
+    CONST_DEFINITION,
+    FUNC_DEFINITION,
+    STRUCT_DEFINITION,
+} DefinitionKind;
+
+typedef struct DefinitionList
+{
+    struct Definition *definition;
+    struct DefinitionList *next;
+} DefinitionList;
+
+typedef struct Definition
+{
+    DefinitionKind kind;
+    union
+    {
+        struct FuncDefinition *func_d;
+        struct Declaration *declaration;
+    } u;
+} Definition;
+
+typedef struct FuncDefinition
+{
+    char *name;
+    ParameterList *parameters;
+    TypeSpecifier *return_type;
+    Block *block;
+} FuncDefinition;
+
+Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block);
+Definition *alloc_declaration_definition(Statement *declaration_stmt);
+DefinitionList *alloc_definition_list(Definition *definition);
+DefinitionList *chain_definition_list(DefinitionList *list, Definition *definition);
+
 typedef struct Compiler
 {
     Block *current_block;
 } Compiler;
 
+Compiler *create_compiler();
 Compiler *get_current_compiler();
 void set_current_compiler(Compiler *compiler);
+void add_definitions_to_compiler(DefinitionList *definitions);
 
 #endif
