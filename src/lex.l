@@ -10,6 +10,7 @@
     return *yytext;
 }
 
+":="       return DECL_ASSIGN;
 ">="       return GE;
 "<="       return LE;
 "=="       return EQ;
@@ -20,10 +21,15 @@
 "else"     return ELSE;
 "for"      return FOR;
 "nil"      return NIL;
+"var"      return VAR;
 "func"     return FUNCTION;
 "return"   return RETURN;
 "break"    return BREAK;
 "continue" return CONTINUE;
+"bool"     return BOOL_T;
+"int"      return INT_T;
+"double"   return DOUBLE_T;
+"string"   return STRING_T;
 
 "true"|"false" {
     yylval.int_value = strcmp(yytext, "false");

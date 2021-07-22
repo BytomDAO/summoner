@@ -1,7 +1,6 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "src/ast.h"
 #include "src/summoner.h"
 #include "src/interpreter.h"
 
@@ -18,21 +17,24 @@ int yyerror(const char *s);
     struct StatementList *statement_list;
     struct Block *block;
     struct Elseif *elseif;
+    struct TypeSpecifier *type_specifier;
 }
 
 %token <int_value> BOOL_LITERAL
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL
 %token <identifier> IDENTIFIER;
-%token FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
+%token VAR FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
+%token BOOL_T INT_T DOUBLE_T STRING_T
 
 %type <expression> expr bool_expr
-%type <statement> stmt if_stmt
+%type <statement> stmt if_stmt declaration_stmt
 %type <statement_list> stmt_list
 %type <block> block
 %type <elseif> elseif elseif_list
+%type <type_specifier> type_specifier
 
-%nonassoc '='
+%nonassoc '=' DECL_ASSIGN
 %left AND OR
 %nonassoc EQ NE
 %nonassoc '>' '<' LE GE
@@ -53,7 +55,22 @@ stmt:
      | IDENTIFIER '=' expr { $$ = alloc_assign_statement($1, $3); }
      | block               { $$ = alloc_block_statement($1); }
      | if_stmt
+     | declaration_stmt
      ;
+
+declaration_stmt:
+                    VAR IDENTIFIER type_specifier          { $$ = alloc_declaration_stmt($2, $3, NULL); }
+                  | VAR IDENTIFIER type_specifier '=' expr { $$ = alloc_declaration_stmt($2, $3, $5); }
+                  | VAR IDENTIFIER '=' expr                { $$ = alloc_declaration_stmt($2, NULL, $4); }
+                  | IDENTIFIER DECL_ASSIGN expr            { $$ = alloc_declaration_stmt($1, NULL, $3); }
+                  ;
+
+type_specifier:
+                BOOL_T   { $$ = alloc_type_specifier(BOOLEAN_TYPE, NULL); }
+              | INT_T    { $$ = alloc_type_specifier(INT_TYPE, NULL); }
+              | DOUBLE_T { $$ = alloc_type_specifier(DOUBLE_TYPE, NULL); }
+              | STRING_T { $$ = alloc_type_specifier(STRING_T, NULL); }
+              ;
 
 if_stmt:
           IF bool_expr block                        { $$ = alloc_if_statement($2, $3, NULL, NULL); }
@@ -72,11 +89,15 @@ elseif:
        ;
 
 block:
-         '{' stmt_list '}'                     { $$ = alloc_block($2); }
-       | '{' new_line stmt_list '}'            { $$ = alloc_block($3); }
-       | '{' stmt_list new_line '}'            { $$ = alloc_block($2); }
-       | '{' new_line stmt_list new_line '}'   { $$ = alloc_block($3); }
-       | '{' new_line '}'                      { $$ = alloc_block(NULL); }
+         '{' stmt_list                         { $<block>$ = open_block(); }
+                       '}'                     { $$ = close_block($<block>3, $2); }
+       | '{' new_line stmt_list                { $<block>$ = open_block(); }
+                                '}'            { $$ = close_block($<block>4, $3); }
+       | '{' stmt_list new_line                { $<block>$ = open_block(); }
+                                '}'            { $$ = close_block($<block>4, $2); }
+       | '{' new_line stmt_list new_line       { $<block>$ = open_block(); }
+                                         '}'   { $$ = close_block($<block>5, $3); }
+       | '{' new_line '}'                      { $<block>$ = alloc_block(NULL); }
        | '{' '}'                               { $$ = alloc_block(NULL); }
      ;
 
@@ -115,18 +136,5 @@ new_line:
 int yyerror(char const *str) {
     extern char *yytext;
     fprintf(stderr, "parse error near %s\n", yytext);
-    return 0;
-}
-
-int main(int argc, char *argv[]) {
-    extern FILE *yyin;
-    yyin = fopen(argv[1], "r");
-    if(yyin==NULL)
-    {
-        printf("fail to open file:%s\n", argv[1]);
-    } else 
-    {
-        yyparse();
-    }
     return 0;
 }
