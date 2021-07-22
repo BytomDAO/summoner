@@ -81,6 +81,14 @@ Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *
     return stmt;
 }
 
+Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer)
+{
+    Statement *stmt = alloc_statement(DECLARATION_STATEMENT);
+    Declaration *decl_s = malloc(sizeof(Declaration));
+    stmt->u.decl_s = decl_s;
+    return stmt;
+}
+
 Statement *alloc_block_statement(Block *block)
 {
     Statement *stmt = alloc_statement(BLOCK_STATEMENT);
@@ -133,9 +141,35 @@ Elseif *chain_else_if_list(Elseif *list, Elseif *elseif)
     return list;
 }
 
+Block *open_block()
+{
+    Block *new_block;
+    Compiler *compiler = get_current_compiler();
+    new_block = alloc_block(NULL);
+    new_block->outer_block = compiler->current_block;
+    compiler->current_block = new_block;
+    return new_block;
+}
+
+Block *close_block(Block *block, StatementList *stmt_list)
+{
+    Compiler *compiler = get_current_compiler();
+    block->statement_list = stmt_list;
+    compiler->current_block = block->outer_block;
+    return block;
+}
+
 Block *alloc_block(StatementList *list)
 {
     Block *block = malloc(sizeof(Block));
-    block->statemen_list = list;
+    block->statement_list = list;
     return block;
+}
+
+TypeSpecifier *alloc_type_specifier(BasicType type, char *identifier)
+{
+    TypeSpecifier *type_s = malloc(sizeof(TypeSpecifier));
+    type_s->basic_type = type;
+    type_s->identifier = identifier;
+    return type_s;
 }

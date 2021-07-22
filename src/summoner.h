@@ -45,8 +45,25 @@ typedef enum
     NOT_EXPRESSION, /* ! */
 } ExpressionKind;
 
+typedef enum
+{
+    INTERFACE_TYPE = 1,
+    BOOLEAN_TYPE,
+    INT_TYPE,
+    DOUBLE_TYPE,
+    STRING_TYPE,
+    STRUCT_TYPE,
+} BasicType;
+
+typedef struct TypeSpecifier
+{
+    BasicType basic_type;
+    char *identifier;
+} TypeSpecifier;
+
 typedef struct Expression
 {
+    TypeSpecifier *type;
     ExpressionKind kind;
     union
     {
@@ -83,7 +100,15 @@ typedef enum
     RETURN_STATEMENT,
     BREAK_STATEMENT,
     CONTINUE_STATEMENT,
+    DECLARATION_STATEMENT,
 } StatementKind;
+
+typedef struct Declaration
+{
+    char *name;
+    TypeSpecifier *type;
+    Expression *initializer;
+} Declaration;
 
 typedef struct AssignStatement
 {
@@ -96,7 +121,8 @@ typedef struct Statement
     StatementKind kind;
     union
     {
-        AssignStatement *assign_s;
+        struct AssignStatement *assign_s;
+        struct Declaration *decl_s;
         struct Block *block_s;
         struct IfStatement *if_s;
     } u;
@@ -110,7 +136,8 @@ typedef struct StatementList
 
 typedef struct Block
 {
-    StatementList *statemen_list;
+    StatementList *statement_list;
+    struct Block *outer_block;
 } Block;
 
 typedef struct Elseif
@@ -132,10 +159,23 @@ Statement *alloc_statement(StatementKind kind);
 Statement *alloc_assign_statement(char *variable, Expression *operand);
 Statement *alloc_block_statement(Block *block);
 Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
+Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer);
 StatementList *alloc_statement_list(Statement *statement);
 StatementList *chain_statement_list(StatementList *list, Statement *statement);
 Elseif *alloc_else_if(Expression *condition, Block *block);
 Elseif *chain_else_if_list(Elseif *list, Elseif *elseif);
+Block *open_block();
+Block *close_block(Block *block, StatementList *stmt_list);
 Block *alloc_block(StatementList *list);
+
+TypeSpecifier *alloc_type_specifier(BasicType type, char *identifier);
+
+typedef struct Compiler
+{
+    Block *current_block;
+} Compiler;
+
+Compiler *get_current_compiler();
+void set_current_compiler(Compiler *compiler);
 
 #endif
