@@ -211,15 +211,18 @@ typedef struct FuncDefinition
     ParameterList *parameters;
     TypeSpecifier *return_type;
     Block *block;
+    struct FuncDefinition *next;
 } FuncDefinition;
 
 Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block);
+FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition *next);
 Definition *alloc_declaration_definition(Statement *declaration_stmt);
 DefinitionList *alloc_definition_list(Definition *definition);
 DefinitionList *chain_definition_list(DefinitionList *list, Definition *definition);
 
 typedef struct Compiler
 {
+    FuncDefinition *func_definition_list;
     Block *current_block;
 } Compiler;
 

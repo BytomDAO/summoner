@@ -210,10 +210,22 @@ Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpe
     func_d->parameters = parameters;
     func_d->return_type = return_type;
     func_d->block = block;
+    func_d->next = NULL;
 
     Definition *definition = alloc_definition(FUNC_DEFINITION);
     definition->u.func_d = func_d;
     return definition;
+}
+
+FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition *next)
+{
+    if (list == NULL)
+    {
+        return next;
+    }
+
+    list->next = next;
+    return list;
 }
 
 Definition *alloc_declaration_definition(Statement *declaration_stmt)
