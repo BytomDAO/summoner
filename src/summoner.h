@@ -219,11 +219,11 @@ typedef struct {
     SVM_LineNumber      *line_number;
 } SVM_CodeBlock;
 
+// TODO: perfect Compiler
 typedef struct Compiler
 {
     int                 svm_constant_count;
     SVM_Constant        *svm_constant;
-    StatementList       *statement_list;
     Block               *current_block;
 } Compiler;
 

@@ -90,7 +90,8 @@ add_top_level(Compiler *compiler, SVM_Executable *exe)
     OpcodeBuf           ob;
 
     init_opcode_buf(&ob);
-    generate_statement_list(exe, NULL, compiler->statement_list,
+    //TODO: local statement list use - functionDecl -> Block -> statementList
+    generate_statement_list(exe, NULL, NULL,
                             &ob);
     
     exe->top_level.code_size = ob.size;
