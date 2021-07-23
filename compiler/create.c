@@ -90,6 +90,8 @@ Statement *alloc_assign_statement(char *variable, Expression *operand)
 {
     Statement *stmt = alloc_statement(ASSIGN_STATEMENT);
     AssignStatement *assign_s = (AssignStatement *)malloc(sizeof(AssignStatement));
+    assign_s->variable = variable;
+    assign_s->operand = operand;
     stmt->u.assign_s = assign_s;
     return stmt;
 }

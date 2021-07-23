@@ -325,6 +325,7 @@ StmtResult Interpreter::eval_stmt(Statement *stmt)
                     return this->eval_block(elseif->block, vector<Identifier *>());
                 }
             }
+
             if (if_s->else_block != nullptr)
             {
                 return this->eval_block(if_s->else_block, vector<Identifier *>());
