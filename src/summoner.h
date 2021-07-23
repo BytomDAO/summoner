@@ -109,6 +109,7 @@ typedef struct Declaration
     char *name;
     TypeSpecifier *type;
     Expression *initializer;
+    bool is_local;
 } Declaration;
 
 typedef struct AssignStatement
@@ -171,77 +172,138 @@ Block *alloc_block(StatementList *list);
 
 TypeSpecifier *alloc_type_specifier(BasicType type, char *identifier);
 
+typedef struct ParameterList
+{
+    char *name;
+    TypeSpecifier *type;
+    struct ParameterList *next;
+} ParameterList;
+
+ParameterList *alloc_parameter(TypeSpecifier *type, char *identifier);
+ParameterList *chain_parameter(ParameterList *list, ParameterList *parameter);
+
+typedef enum
+{
+    DECLARATION_DEFINITION = 1,
+    CONST_DEFINITION,
+    FUNC_DEFINITION,
+    STRUCT_DEFINITION,
+} DefinitionKind;
+
+typedef struct DefinitionList
+{
+    struct Definition *definition;
+    struct DefinitionList *next;
+} DefinitionList;
+
+typedef struct Definition
+{
+    DefinitionKind kind;
+    union
+    {
+        struct FuncDefinition *func_d;
+        struct Declaration *declaration;
+    } u;
+} Definition;
+
+typedef struct FuncDefinition
+{
+    char *name;
+    ParameterList *parameters;
+    TypeSpecifier *return_type;
+    Block *block;
+    struct FuncDefinition *next;
+} FuncDefinition;
+
+Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block);
+FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition *next);
+Definition *alloc_declaration_definition(Statement *declaration_stmt);
+DefinitionList *alloc_definition_list(Definition *definition);
+DefinitionList *chain_definition_list(DefinitionList *list, Definition *definition);
+
 typedef wchar_t SVM_Char;
 typedef unsigned char SVM_Byte;
 
-typedef enum {
+typedef enum
+{
     SVM_FALSE = 0,
     SVM_TRUE = 1
 } SVM_Boolean;
 
-typedef struct {
+typedef struct
+{
     TypeSpecifier *type;
-    char        *package_name;
-    char        *name;
+    char *package_name;
+    char *name;
     SVM_Boolean is_defined;
 } SVM_Constant;
 
-typedef enum {
+typedef enum
+{
     SVM_CONSTANT_INT,
     SVM_CONSTANT_DOUBLE,
     SVM_CONSTANT_STRING
 } SVM_ConstantPoolTag;
 
-typedef struct {
+typedef struct
+{
     SVM_ConstantPoolTag tag;
-    union {
-        int     c_int;
-        double  c_double;
+    union
+    {
+        int c_int;
+        double c_double;
         SVM_Char *c_string;
     } u;
 } SVM_ConstantPool;
 
-typedef struct {
-    char                *name;
-    TypeSpecifier   *type;
+typedef struct
+{
+    char *name;
+    TypeSpecifier *type;
 } SVM_Variable;
 
-typedef struct {
+typedef struct
+{
     int line_number;
     int start_pc;
     int pc_count;
 } SVM_LineNumber;
 
-typedef struct {
-    int                 code_size;
-    SVM_Byte            *code;
-    int                 line_number_size;
-    SVM_LineNumber      *line_number;
+typedef struct
+{
+    int code_size;
+    SVM_Byte *code;
+    int line_number_size;
+    SVM_LineNumber *line_number;
 } SVM_CodeBlock;
 
 // TODO: perfect Compiler
 typedef struct Compiler
 {
-    int                 svm_constant_count;
-    SVM_Constant        *svm_constant;
-    Block               *current_block;
+    int svm_constant_count;
+    SVM_Constant *svm_constant;
+    FuncDefinition *func_definition_list;
+    Block *current_block;
 } Compiler;
 
+Compiler *create_compiler();
 Compiler *get_current_compiler();
 void set_current_compiler(Compiler *compiler);
+void add_definitions_to_compiler(DefinitionList *definitions);
 
-typedef struct SVM_Executable {
-    int                 constant_pool_count;
-    SVM_ConstantPool    *constant_pool;
-    int                 global_variable_count;
-    SVM_Variable        *global_variable;
+typedef struct SVM_Executable
+{
+    int constant_pool_count;
+    SVM_ConstantPool *constant_pool;
+    int global_variable_count;
+    SVM_Variable *global_variable;
     //int               *function_count;
     //SVM_Function      *function;
-    int                 type_specifier_count;
-    TypeSpecifier       *type_specifier;
-    int                 constant_count;
-    SVM_Constant        *constant_definition;
-    SVM_CodeBlock       top_level;
+    int type_specifier_count;
+    TypeSpecifier *type_specifier;
+    int constant_count;
+    SVM_Constant *constant_definition;
+    SVM_CodeBlock top_level;
 } SVM_Executable;
 
 #endif

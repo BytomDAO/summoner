@@ -6,7 +6,7 @@
 
 %%
 
-[+\-*/\(\)<>!{}\n] {
+[+\-*/\(\)<>!{}\n=,] {
     return *yytext;
 }
 
@@ -60,7 +60,7 @@
 [ \t] ;
 
 . {
-    fprintf(stderr, "lexical error\n");
+    fprintf(stderr, "lexical error:%s\n", yytext);
     exit(1);
 }
 %%
