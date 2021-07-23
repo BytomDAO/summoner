@@ -1,8 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "src/summoner.h"
-#include "src/interpreter.h"
+#include "compiler/summoner.h"
 
 int yylex();
 int yyerror(const char *s);
@@ -21,6 +20,7 @@ int yyerror(const char *s);
     struct ParameterList *parameter_list;
     struct Definition *definition;
     struct DefinitionList *definition_list;
+    struct ArgumentList *argument_list;
 }
 
 %token <int_value> BOOL_LITERAL
@@ -30,8 +30,8 @@ int yyerror(const char *s);
 %token VAR FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
 %token BOOL_T INT_T DOUBLE_T STRING_T
 
-%type <expression> expr bool_expr
-%type <statement> stmt if_stmt declaration_stmt variable_declaration
+%type <expression> expr bool_expr func_call_expr
+%type <statement> stmt if_stmt declaration_stmt return_stmt variable_declaration
 %type <statement_list> stmt_list
 %type <block> block
 %type <elseif> elseif elseif_list
@@ -39,6 +39,7 @@ int yyerror(const char *s);
 %type <parameter_list> parameter_list paramter
 %type <definition> definition func_definition
 %type <definition_list> definition_list
+%type <argument_list> argument_list
 
 %nonassoc '=' DECL_ASSIGN
 %left AND OR
@@ -70,7 +71,10 @@ definition:
 
 func_definition:
                  FUNCTION IDENTIFIER '(' parameter_list ')' type_specifier block { $$ = alloc_func_definition($2, $4, $6, $7); }
-                 ;
+               | FUNCTION IDENTIFIER '(' ')' type_specifier block                { $$ = alloc_func_definition($2, NULL, $5, $6); }
+               | FUNCTION IDENTIFIER '(' parameter_list ')' block                { $$ = alloc_func_definition($2, $4, NULL, $6); }
+               | FUNCTION IDENTIFIER '(' ')' block                               { $$ = alloc_func_definition($2, NULL, NULL, $5); }
+               ;
 
 parameter_list:
                  paramter
@@ -82,16 +86,16 @@ paramter:
          ;
 
 stmt_list:
-          stmt                    {$$ = alloc_statement_list($1); }
+          stmt                    {$$ = chain_statement_list(NULL, $1); }
         | stmt_list new_line stmt {$$ = chain_statement_list($1, $3); }
         ;
 
 stmt:
-       expr                { printExprValue(evalExpression($1)); }
-     | IDENTIFIER '=' expr { $$ = alloc_assign_statement($1, $3); }
+       IDENTIFIER '=' expr { $$ = alloc_assign_statement($1, $3); }
      | block               { $$ = alloc_block_statement($1); }
      | if_stmt
      | declaration_stmt
+     | return_stmt
      ;
 
 declaration_stmt:
@@ -109,8 +113,12 @@ type_specifier:
                 BOOL_T   { $$ = alloc_type_specifier(BOOLEAN_TYPE, NULL); }
               | INT_T    { $$ = alloc_type_specifier(INT_TYPE, NULL); }
               | DOUBLE_T { $$ = alloc_type_specifier(DOUBLE_TYPE, NULL); }
-              | STRING_T { $$ = alloc_type_specifier(STRING_T, NULL); }
+              | STRING_T { $$ = alloc_type_specifier(STRING_TYPE, NULL); }
               ;
+
+return_stmt:
+             RETURN expr { $$ = alloc_return_stmt($2); }
+           ;
 
 if_stmt:
           IF bool_expr block                        { $$ = alloc_if_statement($2, $3, NULL, NULL); }
@@ -153,6 +161,7 @@ expr:
          | '-' expr %prec MINUS  { $$ = alloc_unary_expression(MINUS_EXPRESSION, $2); }
          | '(' expr ')'          { $$ = $2; }
          | bool_expr
+         | func_call_expr
          ;
 
 bool_expr:
@@ -166,6 +175,16 @@ bool_expr:
            | expr OR expr          { $$ = alloc_binary_expression(OR_EXPRESSION, $1, $3); }
            | '!' expr %prec NOT    { $$ = alloc_unary_expression(NOT_EXPRESSION, $2); }
            ;
+
+func_call_expr:
+                IDENTIFIER '(' ')'               { $$ = alloc_func_call_expression($1, NULL); }
+              | IDENTIFIER '(' argument_list ')' { $$ = alloc_func_call_expression($1, $3); }
+              ;
+
+argument_list:
+               expr                   { $$ = chain_argument_list(NULL, $1); }
+             | argument_list ',' expr { $$ = chain_argument_list($1, $3); }
+             ;
 
 new_line:
            '\n'

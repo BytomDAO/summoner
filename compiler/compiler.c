@@ -5,8 +5,8 @@ static Compiler *st_current_compiler;
 
 Compiler *create_compiler()
 {
-    Compiler *compiler = malloc(sizeof(Compiler));
-    compiler->func_definition_list = malloc(sizeof(FuncDefinition));
+    Compiler *compiler = (Compiler *)malloc(sizeof(Compiler));
+    compiler->func_definition_list = (FuncDefinition *)malloc(sizeof(FuncDefinition));
     return compiler;
 }
 
@@ -23,7 +23,8 @@ void set_current_compiler(Compiler *compiler)
 void add_definitions_to_compiler(DefinitionList *definitions)
 {
     Compiler *compiler = get_current_compiler();
-    for (DefinitionList *pos = definitions; pos != NULL; pos = pos->next) {
+    for (DefinitionList *pos = definitions; pos != NULL; pos = pos->next)
+    {
         switch (pos->definition->kind)
         {
         case FUNC_DEFINITION:
