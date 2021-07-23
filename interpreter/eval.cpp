@@ -4,6 +4,8 @@
 #include "eval.h"
 #include <iostream>
 
+void print_expr_value(ExprValue val);
+
 ExprValue eval_int_binary_expression(ExpressionKind type, int left, int right)
 {
     ExprValue v;
@@ -335,9 +337,13 @@ StmtResult Interpreter::eval_stmt(Statement *stmt)
     }
     case RETURN_STATEMENT:
     {
-        ReturnStatement *return_s = stmt->u.return_s;
         result.type = RETURN_STATEMENT_RESULT;
-        result.u.return_value = this->eval_expression(return_s->return_value);
+        result.u.return_value = this->eval_expression(stmt->u.expr_s);
+        return result;
+    }
+    case EXPRESSION_STATEMENT:
+    {
+        print_expr_value(this->eval_expression(stmt->u.expr_s));
         return result;
     }
     case DECLARATION_STATEMENT:
@@ -374,6 +380,25 @@ StmtResult Interpreter::eval_stmt(Statement *stmt)
     }
     default:
         cout << "invalid statement kind:" << stmt->kind << endl;
+        exit(1);
+    }
+}
+
+void print_expr_value(ExprValue val)
+{
+    switch (val.type)
+    {
+    case EXPR_INT_VALUE:
+        printf(">>>%d\n", val.u.int_value);
+        break;
+    case EXPR_DOUBLE_VALUE:
+        printf(">>>%lf\n", val.u.double_value);
+        break;
+    case EXPR_BOOL_VALUE:
+        printf(">>>%s\n", val.u.boolean_value ? "true" : "false");
+        break;
+    default:
+        printf("invalid expression type when print expr value:%d", val.type);
         exit(1);
     }
 }

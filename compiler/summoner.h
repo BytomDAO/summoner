@@ -99,6 +99,7 @@ typedef enum
     BREAK_STATEMENT,
     CONTINUE_STATEMENT,
     DECLARATION_STATEMENT,
+    EXPRESSION_STATEMENT,
 } StatementKind;
 
 typedef struct Declaration
@@ -125,6 +126,7 @@ typedef struct Statement
         struct Block *block_s;
         struct IfStatement *if_s;
         struct ReturnStatement *return_s;
+        struct Expression *expr_s;
     } u;
 } Statement;
 
@@ -155,17 +157,13 @@ typedef struct IfStatement
     Block *else_block;
 } IfStatement;
 
-typedef struct ReturnStatement
-{
-    Expression *return_value;
-} ReturnStatement;
-
 Statement *alloc_statement(StatementKind kind);
 Statement *alloc_assign_statement(char *variable, Expression *operand);
 Statement *alloc_block_statement(Block *block);
 Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
 Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer);
 Statement *alloc_return_stmt(Expression *expr);
+Statement *alloc_expression_stmt(Expression *expr);
 StatementList *chain_statement_list(StatementList *list, Statement *statement);
 Elseif *alloc_else_if(Expression *condition, Block *block);
 Elseif *chain_else_if_list(Elseif *list, Elseif *elseif);

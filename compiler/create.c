@@ -122,9 +122,14 @@ Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *i
 Statement *alloc_return_stmt(Expression *expr)
 {
     Statement *stmt = alloc_statement(RETURN_STATEMENT);
-    ReturnStatement *return_s = (ReturnStatement *)malloc(sizeof(ReturnStatement));
-    return_s->return_value = expr;
-    stmt->u.return_s = return_s;
+    stmt->u.expr_s = expr;
+    return stmt;
+}
+
+Statement* alloc_expression_stmt(Expression *expr)
+{
+    Statement *stmt = alloc_statement(EXPRESSION_STATEMENT);
+    stmt->u.expr_s = expr;
     return stmt;
 }
 

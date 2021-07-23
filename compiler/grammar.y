@@ -92,6 +92,7 @@ stmt_list:
 
 stmt:
        IDENTIFIER '=' expr { $$ = alloc_assign_statement($1, $3); }
+     | expr                { $$ = alloc_expression_stmt($1); }
      | block               { $$ = alloc_block_statement($1); }
      | if_stmt
      | declaration_stmt
