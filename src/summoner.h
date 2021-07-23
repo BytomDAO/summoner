@@ -187,9 +187,9 @@ typedef struct {
 } SVM_Constant;
 
 typedef enum {
-    DVM_CONSTANT_INT,
-    DVM_CONSTANT_DOUBLE,
-    DVM_CONSTANT_STRING
+    SVM_CONSTANT_INT,
+    SVM_CONSTANT_DOUBLE,
+    SVM_CONSTANT_STRING
 } SVM_ConstantPoolTag;
 
 typedef struct {
@@ -212,10 +212,18 @@ typedef struct {
     int pc_count;
 } SVM_LineNumber;
 
+typedef struct {
+    int                 code_size;
+    SVM_Byte            *code;
+    int                 line_number_size;
+    SVM_LineNumber      *line_number;
+} SVM_CodeBlock;
+
 typedef struct Compiler
 {
     int                 svm_constant_count;
     SVM_Constant        *svm_constant;
+    StatementList       *statement_list;
     Block               *current_block;
 } Compiler;
 
@@ -233,6 +241,7 @@ typedef struct SVM_Executable {
     TypeSpecifier       *type_specifier;
     int                 constant_count;
     SVM_Constant        *constant_definition;
+    SVM_CodeBlock       top_level;
 } SVM_Executable;
 
 #endif

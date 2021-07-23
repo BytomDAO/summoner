@@ -1,6 +1,21 @@
 #include "summoner.h"
 #include <stdlib.h>
 
+typedef struct {
+    int label_address;
+} LabelTable;
+
+typedef struct {
+    int         size;
+    int         alloc_size;
+    SVM_Byte    *code;
+    int         label_table_size;
+    int         label_table_alloc_size;
+    LabelTable  *label_table;
+    int         line_number_size;
+    SVM_LineNumber      *line_number;
+} OpcodeBuf;
+
 static SVM_Executable *
 alloc_executable()
 {
@@ -21,6 +36,19 @@ alloc_executable()
 }
 
 static void
+init_opcode_buf(OpcodeBuf *ob)
+{
+    ob->size = 0;
+    ob->alloc_size = 0;
+    ob->code = NULL;
+    ob->label_table_size = 0;
+    ob->label_table_alloc_size = 0;
+    ob->label_table = NULL;
+    ob->line_number_size = 0;
+    ob->line_number = NULL;
+}
+
+static void
 add_global_variable(Compiler *compiler, SVM_Executable *exe)
 {
 }
@@ -30,9 +58,45 @@ add_functions(Compiler *compiler, SVM_Executable *exe)
 {
 }
 
+// TODO: huge swith-case
+static void
+generate_statement_list(SVM_Executable *exe, Block *current_block,
+                        StatementList *statement_list,
+                        OpcodeBuf *ob)
+{
+}
+
+static void
+fix_labels(OpcodeBuf *ob)
+{
+} 
+
+static SVM_Byte *
+fix_opcode_buf(OpcodeBuf *ob)
+{
+    SVM_Byte *ret;
+
+    fix_labels(ob);
+    ret = realloc(ob->code, ob->size);
+    free(ob->label_table);
+
+    return ret;
+}
+
+
 static void
 add_top_level(Compiler *compiler, SVM_Executable *exe)
 {
+    OpcodeBuf           ob;
+
+    init_opcode_buf(&ob);
+    generate_statement_list(exe, NULL, compiler->statement_list,
+                            &ob);
+    
+    exe->top_level.code_size = ob.size;
+    exe->top_level.code = fix_opcode_buf(&ob);
+    exe->top_level.line_number_size = ob.line_number_size;
+    exe->top_level.line_number = ob.line_number;
 }
 static void
 generate_constant_initializer(Compiler *compiler, SVM_Executable *exe)
