@@ -6,29 +6,11 @@
 
 typedef enum
 {
-    EXPR_BOOL_VALUE = 1,
-    EXPR_INT_VALUE,
-    EXPR_DOUBLE_VALUE,
-} ExprValueType;
-
-typedef struct ExprValue
-{
-    ExprValueType type;
-    union
-    {
-        bool boolean_value;
-        int int_value;
-        double double_value;
-    } u;
-
-} ExprValue;
-
-typedef enum
-{
     BOOL_EXPRESSION = 1,
     INT_EXPRESSION,
     DOUBLE_EXPRESSION,
     IDENTIFIER_EXPRESSION,
+    FUNC_CALL_EXPRESSION,
     ADD_EXPRESSION,
     SUB_EXPRESSION,
     MUL_EXPRESSION,
@@ -74,6 +56,7 @@ typedef struct Expression
         char *identifier;
         struct BinaryExpression *binary_expression;
         struct Expression *unary_expression;
+        struct FuncCallExpression *func_call_expression;
     } u;
 
 } Expression;
@@ -84,6 +67,18 @@ typedef struct BinaryExpression
     Expression *right;
 } BinaryExpression;
 
+typedef struct ArgumentList
+{
+    Expression *expr;
+    struct ArgumentList *next;
+} ArgumentList;
+
+typedef struct FuncCallExpression
+{
+    char *identifier;
+    ArgumentList *argument_list;
+} FuncCallExpression;
+
 Expression *alloc_expression(ExpressionKind kind);
 Expression *alloc_int_expression(int value);
 Expression *alloc_double_expression(double value);
@@ -91,6 +86,8 @@ Expression *alloc_bool_expression(bool value);
 Expression *alloc_identifier_expression(char *identifier);
 Expression *alloc_unary_expression(ExpressionKind kind, Expression *unaryExpr);
 Expression *alloc_binary_expression(ExpressionKind kind, Expression *left, Expression *right);
+Expression *alloc_func_call_expression(char *identifier, ArgumentList *argument_list);
+ArgumentList *chain_argument_list(ArgumentList *list, Expression *expr);
 
 typedef enum
 {
@@ -102,6 +99,7 @@ typedef enum
     BREAK_STATEMENT,
     CONTINUE_STATEMENT,
     DECLARATION_STATEMENT,
+    EXPRESSION_STATEMENT,
 } StatementKind;
 
 typedef struct Declaration
@@ -127,6 +125,8 @@ typedef struct Statement
         struct Declaration *decl_s;
         struct Block *block_s;
         struct IfStatement *if_s;
+        struct ReturnStatement *return_s;
+        struct Expression *expr_s;
     } u;
 } Statement;
 
@@ -157,13 +157,14 @@ typedef struct IfStatement
     Block *else_block;
 } IfStatement;
 
-Statement *alloc_statement(StatementKind kind);
-Statement *alloc_assign_statement(char *variable, Expression *operand);
-Statement *alloc_block_statement(Block *block);
-Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
+Statement *alloc_stmt(StatementKind kind);
+Statement *alloc_assign_stmt(char *variable, Expression *operand);
+Statement *alloc_block_stmt(Block *block);
+Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
 Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer);
-StatementList *alloc_statement_list(Statement *statement);
-StatementList *chain_statement_list(StatementList *list, Statement *statement);
+Statement *alloc_return_stmt(Expression *expr);
+Statement *alloc_expression_stmt(Expression *expr);
+StatementList *chain_stmt_list(StatementList *list, Statement *statement);
 Elseif *alloc_else_if(Expression *condition, Block *block);
 Elseif *chain_else_if_list(Elseif *list, Elseif *elseif);
 Block *open_block();

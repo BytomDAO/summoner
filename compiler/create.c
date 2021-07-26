@@ -4,7 +4,7 @@
 
 Expression *alloc_expression(ExpressionKind kind)
 {
-    Expression *expr = malloc(sizeof(Expression));
+    Expression *expr = (Expression *)malloc(sizeof(Expression));
     expr->kind = kind;
     return expr;
 }
@@ -47,32 +47,59 @@ Expression *alloc_unary_expression(ExpressionKind kind, Expression *unaryExpr)
 Expression *alloc_binary_expression(ExpressionKind kind, Expression *left, Expression *right)
 {
     Expression *expr = alloc_expression(kind);
-    BinaryExpression *binary = malloc(sizeof(BinaryExpression));
+    BinaryExpression *binary = (BinaryExpression *)malloc(sizeof(BinaryExpression));
     binary->left = left;
     binary->right = right;
     expr->u.binary_expression = binary;
     return expr;
 }
 
-Statement *alloc_statement(StatementKind kind)
+Expression *alloc_func_call_expression(char *identifier, ArgumentList *argument_list)
 {
-    Statement *stmt = malloc(sizeof(Statement));
+    Expression *expr = alloc_expression(FUNC_CALL_EXPRESSION);
+    FuncCallExpression *func_call_e = (FuncCallExpression *)malloc(sizeof(FuncCallExpression));
+    func_call_e->identifier = identifier;
+    func_call_e->argument_list = argument_list;
+    expr->u.func_call_expression = func_call_e;
+    return expr;
+}
+
+ArgumentList *chain_argument_list(ArgumentList *list, Expression *expr)
+{
+    ArgumentList *next = (ArgumentList *)malloc(sizeof(ArgumentList));
+    next->expr = expr;
+    next->next = NULL;
+
+    if (list == NULL)
+    {
+        return next;
+    }
+
+    list->next = next;
+    return list;
+}
+
+Statement *alloc_stmt(StatementKind kind)
+{
+    Statement *stmt = (Statement *)malloc(sizeof(Statement));
     stmt->kind = kind;
     return stmt;
 }
 
-Statement *alloc_assign_statement(char *variable, Expression *operand)
+Statement *alloc_assign_stmt(char *variable, Expression *operand)
 {
-    Statement *stmt = alloc_statement(ASSIGN_STATEMENT);
-    AssignStatement *assign_s = malloc(sizeof(AssignStatement));
+    Statement *stmt = alloc_stmt(ASSIGN_STATEMENT);
+    AssignStatement *assign_s = (AssignStatement *)malloc(sizeof(AssignStatement));
+    assign_s->variable = variable;
+    assign_s->operand = operand;
     stmt->u.assign_s = assign_s;
     return stmt;
 }
 
-Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block)
+Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block)
 {
-    Statement *stmt = alloc_statement(IF_STATEMENT);
-    IfStatement *if_s = malloc(sizeof(IfStatement));
+    Statement *stmt = alloc_stmt(IF_STATEMENT);
+    IfStatement *if_s = (IfStatement *)malloc(sizeof(IfStatement));
     if_s->condition = condition;
     if_s->then_block = then_block;
     if_s->elseif_list = elseif_list;
@@ -83,44 +110,58 @@ Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *
 
 Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer)
 {
-    Statement *stmt = alloc_statement(DECLARATION_STATEMENT);
-    Declaration *decl_s = malloc(sizeof(Declaration));
+    Statement *stmt = alloc_stmt(DECLARATION_STATEMENT);
+    Declaration *decl_s = (Declaration *)malloc(sizeof(Declaration));
+    decl_s->name = name;
+    decl_s->type = type;
+    decl_s->initializer = initializer;
     stmt->u.decl_s = decl_s;
     return stmt;
 }
 
-Statement *alloc_block_statement(Block *block)
+Statement *alloc_return_stmt(Expression *expr)
 {
-    Statement *stmt = alloc_statement(BLOCK_STATEMENT);
+    Statement *stmt = alloc_stmt(RETURN_STATEMENT);
+    stmt->u.expr_s = expr;
+    return stmt;
+}
+
+Statement* alloc_expression_stmt(Expression *expr)
+{
+    Statement *stmt = alloc_stmt(EXPRESSION_STATEMENT);
+    stmt->u.expr_s = expr;
+    return stmt;
+}
+
+Statement *alloc_block_stmt(Block *block)
+{
+    Statement *stmt = alloc_stmt(BLOCK_STATEMENT);
     stmt->u.block_s = block;
     return stmt;
 }
 
-StatementList *alloc_statement_list(Statement *statement)
+StatementList *chain_stmt_list(StatementList *list, Statement *statement)
 {
-    StatementList *stmt_list = malloc(sizeof(StatementList));
+    StatementList *stmt_list = (StatementList *)malloc(sizeof(StatementList));
     stmt_list->statement = statement;
-    return stmt_list;
-}
+    stmt_list->next = NULL;
 
-StatementList *chain_statement_list(StatementList *list, Statement *statement)
-{
     if (list == NULL)
     {
-        return alloc_statement_list(statement);
+        return stmt_list;
     }
 
     StatementList *pos;
     for (pos = list; pos->next; pos = pos->next)
         ;
 
-    pos->next = alloc_statement_list(statement);
+    pos->next = stmt_list;
     return list;
 }
 
 Elseif *alloc_else_if(Expression *condition, Block *block)
 {
-    Elseif *elseif = malloc(sizeof(Elseif));
+    Elseif *elseif = (Elseif *)malloc(sizeof(Elseif));
     elseif->condition = condition;
     elseif->block = block;
     return elseif;
@@ -161,14 +202,14 @@ Block *close_block(Block *block, StatementList *stmt_list)
 
 Block *alloc_block(StatementList *list)
 {
-    Block *block = malloc(sizeof(Block));
+    Block *block = (Block *)malloc(sizeof(Block));
     block->statement_list = list;
     return block;
 }
 
 TypeSpecifier *alloc_type_specifier(BasicType type, char *identifier)
 {
-    TypeSpecifier *type_s = malloc(sizeof(TypeSpecifier));
+    TypeSpecifier *type_s = (TypeSpecifier *)malloc(sizeof(TypeSpecifier));
     type_s->basic_type = type;
     type_s->identifier = identifier;
     return type_s;
@@ -176,7 +217,7 @@ TypeSpecifier *alloc_type_specifier(BasicType type, char *identifier)
 
 ParameterList *alloc_parameter(TypeSpecifier *type, char *identifier)
 {
-    ParameterList *p = malloc(sizeof(ParameterList));
+    ParameterList *p = (ParameterList *)malloc(sizeof(ParameterList));
     p->name = identifier;
     p->type = type;
     p->next = NULL;
@@ -198,14 +239,14 @@ ParameterList *chain_parameter(ParameterList *list, ParameterList *parameter)
 
 Definition *alloc_definition(DefinitionKind kind)
 {
-    Definition *definition = malloc(sizeof(Definition));
+    Definition *definition = (Definition *)malloc(sizeof(Definition));
     definition->kind = kind;
     return definition;
 }
 
 Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block)
 {
-    FuncDefinition *func_d = malloc(sizeof(FuncDefinition));
+    FuncDefinition *func_d = (FuncDefinition *)malloc(sizeof(FuncDefinition));
     func_d->name = name;
     func_d->parameters = parameters;
     func_d->return_type = return_type;
@@ -224,7 +265,11 @@ FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition 
         return next;
     }
 
-    list->next = next;
+    FuncDefinition *pos;
+    for (pos = list; pos->next; pos = pos->next)
+        ;
+
+    pos->next = next;
     return list;
 }
 
@@ -237,7 +282,7 @@ Definition *alloc_declaration_definition(Statement *declaration_stmt)
 
 DefinitionList *alloc_definition_list(Definition *definition)
 {
-    DefinitionList *list = malloc(sizeof(DefinitionList));
+    DefinitionList *list = (DefinitionList *)malloc(sizeof(DefinitionList));
     list->definition = definition;
     list->next = NULL;
     return list;

@@ -1,10 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include "eval.h"
 #include "../compiler/summoner.h"
+
+using namespace std;
 
 int main(int argc, char *argv[])
 {
-    Compiler *compiler = malloc(sizeof(Compiler));
+    Compiler *compiler = new Compiler();
     set_current_compiler(compiler);
 
     extern int yyparse();
@@ -12,11 +14,14 @@ int main(int argc, char *argv[])
     yyin = fopen(argv[1], "r");
     if (yyin == NULL)
     {
-        printf("fail to open file:%s\n", argv[1]);
+        cout << "fail to open file:" << argv[1] << endl;
     }
     else
     {
         yyparse();
     }
+
+    Interpreter *interpreter = new Interpreter(compiler->func_definition_list);
+    interpreter->exec();
     return 0;
 }

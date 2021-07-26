@@ -51,7 +51,7 @@
 }
 
 [A-Za-z_][A-Za-z_0-9]* {
-  char *new_str = malloc(strlen(yytext) + 1);
+  char *new_str = (char *)malloc(strlen(yytext) + 1);
   strcpy(new_str, yytext);
   yylval.identifier = new_str;
   return IDENTIFIER;
