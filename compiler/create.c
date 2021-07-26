@@ -79,16 +79,16 @@ ArgumentList *chain_argument_list(ArgumentList *list, Expression *expr)
     return list;
 }
 
-Statement *alloc_statement(StatementKind kind)
+Statement *alloc_stmt(StatementKind kind)
 {
     Statement *stmt = (Statement *)malloc(sizeof(Statement));
     stmt->kind = kind;
     return stmt;
 }
 
-Statement *alloc_assign_statement(char *variable, Expression *operand)
+Statement *alloc_assign_stmt(char *variable, Expression *operand)
 {
-    Statement *stmt = alloc_statement(ASSIGN_STATEMENT);
+    Statement *stmt = alloc_stmt(ASSIGN_STATEMENT);
     AssignStatement *assign_s = (AssignStatement *)malloc(sizeof(AssignStatement));
     assign_s->variable = variable;
     assign_s->operand = operand;
@@ -96,9 +96,9 @@ Statement *alloc_assign_statement(char *variable, Expression *operand)
     return stmt;
 }
 
-Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block)
+Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block)
 {
-    Statement *stmt = alloc_statement(IF_STATEMENT);
+    Statement *stmt = alloc_stmt(IF_STATEMENT);
     IfStatement *if_s = (IfStatement *)malloc(sizeof(IfStatement));
     if_s->condition = condition;
     if_s->then_block = then_block;
@@ -110,7 +110,7 @@ Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *
 
 Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer)
 {
-    Statement *stmt = alloc_statement(DECLARATION_STATEMENT);
+    Statement *stmt = alloc_stmt(DECLARATION_STATEMENT);
     Declaration *decl_s = (Declaration *)malloc(sizeof(Declaration));
     decl_s->name = name;
     decl_s->type = type;
@@ -121,26 +121,26 @@ Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *i
 
 Statement *alloc_return_stmt(Expression *expr)
 {
-    Statement *stmt = alloc_statement(RETURN_STATEMENT);
+    Statement *stmt = alloc_stmt(RETURN_STATEMENT);
     stmt->u.expr_s = expr;
     return stmt;
 }
 
 Statement* alloc_expression_stmt(Expression *expr)
 {
-    Statement *stmt = alloc_statement(EXPRESSION_STATEMENT);
+    Statement *stmt = alloc_stmt(EXPRESSION_STATEMENT);
     stmt->u.expr_s = expr;
     return stmt;
 }
 
-Statement *alloc_block_statement(Block *block)
+Statement *alloc_block_stmt(Block *block)
 {
-    Statement *stmt = alloc_statement(BLOCK_STATEMENT);
+    Statement *stmt = alloc_stmt(BLOCK_STATEMENT);
     stmt->u.block_s = block;
     return stmt;
 }
 
-StatementList *chain_statement_list(StatementList *list, Statement *statement)
+StatementList *chain_stmt_list(StatementList *list, Statement *statement)
 {
     StatementList *stmt_list = (StatementList *)malloc(sizeof(StatementList));
     stmt_list->statement = statement;

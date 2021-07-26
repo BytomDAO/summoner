@@ -157,14 +157,14 @@ typedef struct IfStatement
     Block *else_block;
 } IfStatement;
 
-Statement *alloc_statement(StatementKind kind);
-Statement *alloc_assign_statement(char *variable, Expression *operand);
-Statement *alloc_block_statement(Block *block);
-Statement *alloc_if_statement(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
+Statement *alloc_stmt(StatementKind kind);
+Statement *alloc_assign_stmt(char *variable, Expression *operand);
+Statement *alloc_block_stmt(Block *block);
+Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
 Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer);
 Statement *alloc_return_stmt(Expression *expr);
 Statement *alloc_expression_stmt(Expression *expr);
-StatementList *chain_statement_list(StatementList *list, Statement *statement);
+StatementList *chain_stmt_list(StatementList *list, Statement *statement);
 Elseif *alloc_else_if(Expression *condition, Block *block);
 Elseif *chain_else_if_list(Elseif *list, Elseif *elseif);
 Block *open_block();

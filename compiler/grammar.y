@@ -86,14 +86,14 @@ paramter:
          ;
 
 stmt_list:
-          stmt                    {$$ = chain_statement_list(NULL, $1); }
-        | stmt_list new_line stmt {$$ = chain_statement_list($1, $3); }
+          stmt                    {$$ = chain_stmt_list(NULL, $1); }
+        | stmt_list new_line stmt {$$ = chain_stmt_list($1, $3); }
         ;
 
 stmt:
-       IDENTIFIER '=' expr { $$ = alloc_assign_statement($1, $3); }
+       IDENTIFIER '=' expr { $$ = alloc_assign_stmt($1, $3); }
      | expr                { $$ = alloc_expression_stmt($1); }
-     | block               { $$ = alloc_block_statement($1); }
+     | block               { $$ = alloc_block_stmt($1); }
      | if_stmt
      | declaration_stmt
      | return_stmt
@@ -122,10 +122,10 @@ return_stmt:
            ;
 
 if_stmt:
-          IF bool_expr block                        { $$ = alloc_if_statement($2, $3, NULL, NULL); }
-        | IF bool_expr block ELSE block             { $$ = alloc_if_statement($2, $3, NULL, $5); } 
-        | IF bool_expr block elseif_list            { $$ = alloc_if_statement($2, $3, $4, NULL); }
-        | IF bool_expr block elseif_list ELSE block { $$ = alloc_if_statement($2, $3, $4, $6); }
+          IF bool_expr block                        { $$ = alloc_if_stmt($2, $3, NULL, NULL); }
+        | IF bool_expr block ELSE block             { $$ = alloc_if_stmt($2, $3, NULL, $5); } 
+        | IF bool_expr block elseif_list            { $$ = alloc_if_stmt($2, $3, $4, NULL); }
+        | IF bool_expr block elseif_list ELSE block { $$ = alloc_if_stmt($2, $3, $4, $6); }
         ;
 
 elseif_list: 
