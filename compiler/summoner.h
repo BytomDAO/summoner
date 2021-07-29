@@ -94,10 +94,7 @@ typedef enum
     ASSIGN_STATEMENT = 1,
     BLOCK_STATEMENT,
     IF_STATEMENT,
-    FOR_STATEMENT,
     RETURN_STATEMENT,
-    BREAK_STATEMENT,
-    CONTINUE_STATEMENT,
     DECLARATION_STATEMENT,
     EXPRESSION_STATEMENT,
 } StatementKind;
@@ -109,6 +106,11 @@ typedef struct Declaration
     Expression *initializer;
     bool is_local;
 } Declaration;
+
+typedef struct DeclarationList {
+    Declaration *declaration;
+    struct DeclarationList *next;
+} DeclarationList;
 
 typedef struct AssignStatement
 {
@@ -125,7 +127,6 @@ typedef struct Statement
         struct Declaration *decl_s;
         struct Block *block_s;
         struct IfStatement *if_s;
-        struct ReturnStatement *return_s;
         struct Expression *expr_s;
     } u;
 } Statement;
@@ -283,8 +284,10 @@ typedef struct Compiler
 {
     int svm_constant_count;
     SVM_Constant *svm_constant;
+    int function_count;
     FuncDefinition *func_definition_list;
     Block *current_block;
+    DeclarationList     *declaration_list;
 } Compiler;
 
 Compiler *create_compiler();
