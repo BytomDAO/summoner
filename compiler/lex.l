@@ -4,7 +4,12 @@
 #include "y.tab.h"
 %}
 
+%x COMMENT
 %%
+
+"//"         BEGIN(COMMENT);
+<COMMENT>\n  { BEGIN(0); return '\n'; }
+<COMMENT>.   ; // eat anything in comment
 
 [+\-*/\(\)<>!{}\n=,] {
     return *yytext;
