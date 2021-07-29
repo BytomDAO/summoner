@@ -1,5 +1,6 @@
 #include "summoner.h"
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct {
     int label_address;
@@ -51,11 +52,114 @@ init_opcode_buf(OpcodeBuf *ob)
 static void
 add_global_variable(Compiler *compiler, SVM_Executable *exe)
 {
+    DeclarationList *dl;
+    int i,var_count = 0;
+
+    for (dl = compiler->declaration_list; dl; dl = dl->next) {
+        var_count++;
+    }
+    exe->global_variable_count = var_count;
+    exe->global_variable = (SVM_Variable *)malloc(sizeof(SVM_Variable) * var_count);
+
+    for (dl = compiler->declaration_list, i = 0; dl; dl = dl->next, i++) {
+        strcpy(exe->global_variable[i].name, dl->declaration->name);
+        exe->global_variable[i].type = dl->declaration->type;
+    }
+    // TODO: derive type: FUNCTION_DERIVE/ARRAY_DERIVE
+}
+
+static void
+generate_statement_list(SVM_Executable *exe, Block *current_block,
+                        StatementList *statement_list,
+                        OpcodeBuf *ob);
+
+static void
+add_function(SVM_Executable *exe, FuncDefinition *src)
+{
+    OpcodeBuf           ob;
+    init_opcode_buf(&ob);
+    generate_statement_list(exe, src->block, src->block->statement_list, &ob);
 }
 
 static void
 add_functions(Compiler *compiler, SVM_Executable *exe)
 {
+    FuncDefinition  *fd;
+    for (fd = compiler->func_definition_list; fd; fd = fd->next) {
+        add_function(exe, fd);
+    }
+}
+
+static void
+generate_assign_statement(SVM_Executable *exe, Block *current_block,
+                        AssignStatement *assign_stmt,
+                        OpcodeBuf *ob)
+{
+
+}
+
+static void
+generate_block_statement(SVM_Executable *exe, Block *current_block,
+                        Block *block_stmt,
+                        OpcodeBuf *ob)
+{
+
+}
+
+static void
+generate_if_statement(SVM_Executable *exe, Block *current_block,
+                        IfStatement *if_smt,
+                        OpcodeBuf *ob)
+{
+
+}
+
+static void
+generate_for_statement(SVM_Executable *exe, Block *current_block,
+                        ForStatement *for_stmt,
+                        OpcodeBuf *ob)
+{
+
+}
+
+static void
+generate_return_statement(SVM_Executable *exe, Block *current_block,
+                        ReturnStatement *return_stmt,
+                        OpcodeBuf *ob)
+{
+
+}
+
+static void
+generate_break_statement(SVM_Executable *exe, Block *current_block,
+                        BreakStatement *break_stmt,
+                        OpcodeBuf *ob)
+{
+
+}
+
+static void
+generate_continue_statement(SVM_Executable *exe, Block *current_block,
+                        ContinueStatement *continue_stmt,
+                        OpcodeBuf *ob)
+{
+
+}
+
+static void
+generate_initializer(SVM_Executable *exe, Block *current_block,
+                        Declaration *decl_stmt,
+                        OpcodeBuf *ob)
+{
+
+}
+
+static void
+generate_expression_statement(SVM_Executable *exe, Block *current_block,
+                        Expression *expr,
+                        OpcodeBuf *ob)
+{
+
 }
 
 // TODO: huge swith-case
@@ -64,6 +168,46 @@ generate_statement_list(SVM_Executable *exe, Block *current_block,
                         StatementList *statement_list,
                         OpcodeBuf *ob)
 {
+    StatementList *pos;
+
+
+    for (pos = statement_list; pos; pos = pos->next) {
+        switch (pos->statement->kind) {
+        case ASSIGN_STATEMENT:
+            generate_assign_statement(exe, current_block, pos->statement->u.assign_s, ob);
+        case BLOCK_STATEMENT:
+            generate_block_statement(exe, current_block, pos->statement->u.block_s, ob);
+        case IF_STATEMENT:
+            generate_if_statement(exe, current_block, pos->statement->u.if_s, ob);
+            break;
+        case FOR_STATEMENT:
+            generate_for_statement(exe, current_block, pos->statement->u.for_s, ob);
+            break;
+        case RETURN_STATEMENT:
+            generate_return_statement(exe, current_block, pos->statement->u.return_s, ob);
+            break;
+        case BREAK_STATEMENT:
+            generate_break_statement(exe, current_block, pos->statement->u.break_s, ob);
+            break;
+        case CONTINUE_STATEMENT:
+            generate_continue_statement(exe, current_block,
+                                        pos->statement->u.continue_s, ob);
+            break;
+        case DECLARATION_STATEMENT:
+            generate_initializer(exe, current_block,
+                                 pos->statement->u.decl_s, ob);
+            break;
+        case EXPRESSION_STATEMENT:
+            generate_expression_statement(exe, current_block,
+                                          pos->statement->u.expr_s, ob);
+            break;
+        default:
+            printf("pos->statement->kind..%d\n", pos->statement->kind);
+            exit(1);
+            // TODO: use assert micro
+            // DBG_assert(0, ("pos->statement->kind..%d\n", pos->statement->kind));
+        }
+    }
 }
 
 static void

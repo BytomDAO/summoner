@@ -110,11 +110,36 @@ typedef struct Declaration
     bool is_local;
 } Declaration;
 
+typedef struct DeclarationList {
+    Declaration *declaration;
+    struct DeclarationList *next;
+} DeclarationList;
+
 typedef struct AssignStatement
 {
     char *variable;
     Expression *operand;
 } AssignStatement;
+
+typedef struct ReturnStatement
+{
+
+} ReturnStatement;
+
+typedef struct ForStatement
+{
+
+} ForStatement;
+
+typedef struct BreakStatement
+{
+
+} BreakStatement;
+
+typedef struct ContinueStatement
+{
+
+} ContinueStatement;
 
 typedef struct Statement
 {
@@ -127,6 +152,9 @@ typedef struct Statement
         struct IfStatement *if_s;
         struct ReturnStatement *return_s;
         struct Expression *expr_s;
+        struct ForStatement *for_s;
+        struct BreakStatement *break_s;
+        struct ContinueStatement *continue_s;
     } u;
 } Statement;
 
@@ -283,8 +311,10 @@ typedef struct Compiler
 {
     int svm_constant_count;
     SVM_Constant *svm_constant;
+    int function_count;
     FuncDefinition *func_definition_list;
     Block *current_block;
+    DeclarationList     *declaration_list;
 } Compiler;
 
 Compiler *create_compiler();
