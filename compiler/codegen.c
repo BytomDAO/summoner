@@ -115,32 +115,8 @@ generate_if_statement(SVM_Executable *exe, Block *current_block,
 }
 
 static void
-generate_for_statement(SVM_Executable *exe, Block *current_block,
-                        ForStatement *for_stmt,
-                        OpcodeBuf *ob)
-{
-
-}
-
-static void
 generate_return_statement(SVM_Executable *exe, Block *current_block,
-                        ReturnStatement *return_stmt,
-                        OpcodeBuf *ob)
-{
-
-}
-
-static void
-generate_break_statement(SVM_Executable *exe, Block *current_block,
-                        BreakStatement *break_stmt,
-                        OpcodeBuf *ob)
-{
-
-}
-
-static void
-generate_continue_statement(SVM_Executable *exe, Block *current_block,
-                        ContinueStatement *continue_stmt,
+                        Expression *return_stmt,
                         OpcodeBuf *ob)
 {
 
@@ -180,18 +156,8 @@ generate_statement_list(SVM_Executable *exe, Block *current_block,
         case IF_STATEMENT:
             generate_if_statement(exe, current_block, pos->statement->u.if_s, ob);
             break;
-        case FOR_STATEMENT:
-            generate_for_statement(exe, current_block, pos->statement->u.for_s, ob);
-            break;
         case RETURN_STATEMENT:
-            generate_return_statement(exe, current_block, pos->statement->u.return_s, ob);
-            break;
-        case BREAK_STATEMENT:
-            generate_break_statement(exe, current_block, pos->statement->u.break_s, ob);
-            break;
-        case CONTINUE_STATEMENT:
-            generate_continue_statement(exe, current_block,
-                                        pos->statement->u.continue_s, ob);
+            generate_return_statement(exe, current_block, pos->statement->u.expr_s, ob);
             break;
         case DECLARATION_STATEMENT:
             generate_initializer(exe, current_block,

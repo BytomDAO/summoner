@@ -94,10 +94,7 @@ typedef enum
     ASSIGN_STATEMENT = 1,
     BLOCK_STATEMENT,
     IF_STATEMENT,
-    FOR_STATEMENT,
     RETURN_STATEMENT,
-    BREAK_STATEMENT,
-    CONTINUE_STATEMENT,
     DECLARATION_STATEMENT,
     EXPRESSION_STATEMENT,
 } StatementKind;
@@ -120,26 +117,6 @@ typedef struct AssignStatement
     char *variable;
     Expression *operand;
 } AssignStatement;
-
-typedef struct ReturnStatement
-{
-
-} ReturnStatement;
-
-typedef struct ForStatement
-{
-
-} ForStatement;
-
-typedef struct BreakStatement
-{
-
-} BreakStatement;
-
-typedef struct ContinueStatement
-{
-
-} ContinueStatement;
 
 typedef struct Statement
 {
