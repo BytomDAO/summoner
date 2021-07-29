@@ -127,11 +127,7 @@ typedef struct Statement
         struct Declaration *decl_s;
         struct Block *block_s;
         struct IfStatement *if_s;
-        struct ReturnStatement *return_s;
         struct Expression *expr_s;
-        struct ForStatement *for_s;
-        struct BreakStatement *break_s;
-        struct ContinueStatement *continue_s;
     } u;
 } Statement;
 
