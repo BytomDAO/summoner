@@ -226,7 +226,8 @@ void Interpreter::exec()
     for (DeclarationList *pos = this->declaration_list; pos != nullptr; pos = pos->next)
     {
         Declaration *declaration = pos->declaration;
-        this->current_scope->put_identifier(new Identifier(declaration->name, this->eval_expression(declaration->initializer)));
+        bool is_const = declaration->is_const;
+        this->current_scope->put_identifier(new Identifier(declaration->name, this->eval_expression(declaration->initializer), is_const));
     }
 
     FuncDefinition *func_d = this->find_func_definition("main");
@@ -309,6 +310,11 @@ StmtResult Interpreter::eval_stmt(Statement *stmt)
         if (identifier == nullptr)
         {
             cout << "\"" << assign_s->variable << "\" is undefined" << endl;
+            exit(1);
+        }
+        if (identifier->get_is_const())
+        {
+            cout << "assign const is invalid" << endl;
             exit(1);
         }
 

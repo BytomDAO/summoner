@@ -119,6 +119,13 @@ Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *i
     return stmt;
 }
 
+Statement *alloc_const_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer)
+{
+    Statement *stmt = alloc_declaration_stmt(name, type, initializer);
+    stmt->u.decl_s->is_const = true;
+    return stmt;
+}
+
 Statement *alloc_return_stmt(Expression *expr)
 {
     Statement *stmt = alloc_stmt(RETURN_STATEMENT);
