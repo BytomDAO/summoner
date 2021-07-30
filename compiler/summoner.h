@@ -105,6 +105,7 @@ typedef struct Declaration
     TypeSpecifier *type;
     Expression *initializer;
     bool is_local;
+    bool is_const;
 } Declaration;
 
 typedef struct DeclarationList {
@@ -163,6 +164,7 @@ Statement *alloc_assign_stmt(char *variable, Expression *operand);
 Statement *alloc_block_stmt(Block *block);
 Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
 Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer);
+Statement *alloc_const_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer);
 Statement *alloc_return_stmt(Expression *expr);
 Statement *alloc_expression_stmt(Expression *expr);
 StatementList *chain_stmt_list(StatementList *list, Statement *statement);
@@ -220,6 +222,7 @@ typedef struct FuncDefinition
 Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block);
 FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition *next);
 Definition *alloc_declaration_definition(Statement *declaration_stmt);
+DeclarationList *chain_declaration_definition_list(DeclarationList *list, Declaration *declaration);
 DefinitionList *alloc_definition_list(Definition *definition);
 DefinitionList *chain_definition_list(DefinitionList *list, Definition *definition);
 

@@ -27,17 +27,17 @@ int yyerror(const char *s);
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL
 %token <identifier> IDENTIFIER;
-%token VAR FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
+%token VAR CONST FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
 %token BOOL_T INT_T DOUBLE_T STRING_T
 
-%type <expression> expr bool_expr func_call_expr
-%type <statement> stmt if_stmt declaration_stmt return_stmt variable_declaration
+%type <expression> expr bool_expr func_call_expr literal
+%type <statement> stmt if_stmt return_stmt declaration_stmt variable_declaration_stmt const_stmt
 %type <statement_list> stmt_list
 %type <block> block
 %type <elseif> elseif elseif_list
 %type <type_specifier> type_specifier
 %type <parameter_list> parameter_list paramter
-%type <definition> definition func_definition
+%type <definition> definition func_definition variable_definition const_definition
 %type <definition_list> definition_list
 %type <argument_list> argument_list
 
@@ -66,7 +66,8 @@ definition_list:
 
 definition:
             func_definition
-          | variable_declaration { $$ = alloc_declaration_definition($1); }
+          | const_definition          
+          | variable_definition
           ;
 
 func_definition:
@@ -75,6 +76,14 @@ func_definition:
                | FUNCTION IDENTIFIER '(' parameter_list ')' block                { $$ = alloc_func_definition($2, $4, NULL, $6); }
                | FUNCTION IDENTIFIER '(' ')' block                               { $$ = alloc_func_definition($2, NULL, NULL, $5); }
                ;
+
+variable_definition:
+                     variable_declaration_stmt { $$ = alloc_declaration_definition($1); }
+                   ;
+
+const_definition:
+                  const_stmt { $$ = alloc_declaration_definition($1); }
+                ;
 
 parameter_list:
                  paramter
@@ -99,16 +108,21 @@ stmt:
      | return_stmt
      ;
 
+const_stmt:
+            CONST IDENTIFIER '=' literal                 { $$ = alloc_const_declaration_stmt($2, NULL, $4); }
+          | CONST IDENTIFIER type_specifier '=' literal  { $$ = alloc_const_declaration_stmt($2, $3, $5); }
+          ;
+
 declaration_stmt:
                     IDENTIFIER DECL_ASSIGN expr            { $$ = alloc_declaration_stmt($1, NULL, $3); }
-                  | variable_declaration  
+                  | variable_declaration_stmt  
                   ;
 
-variable_declaration:
-                        VAR IDENTIFIER type_specifier          { $$ = alloc_declaration_stmt($2, $3, NULL); }
-                      | VAR IDENTIFIER type_specifier '=' expr { $$ = alloc_declaration_stmt($2, $3, $5); }
-                      | VAR IDENTIFIER '=' expr                { $$ = alloc_declaration_stmt($2, NULL, $4); }
-                      ;
+variable_declaration_stmt:
+                           VAR IDENTIFIER type_specifier          { $$ = alloc_declaration_stmt($2, $3, NULL); }
+                         | VAR IDENTIFIER type_specifier '=' expr { $$ = alloc_declaration_stmt($2, $3, $5); }
+                         | VAR IDENTIFIER '=' expr                { $$ = alloc_declaration_stmt($2, NULL, $4); }
+                         ;
 
 type_specifier:
                 BOOL_T   { $$ = alloc_type_specifier(BOOLEAN_TYPE, NULL); }
@@ -151,9 +165,7 @@ block:
        ;
 
 expr:
-           INT_LITERAL           { $$ = alloc_int_expression($1); }
-         | DOUBLE_LITERAL        { $$ = alloc_double_expression($1); }
-         | BOOL_LITERAL          { $$ = alloc_bool_expression($1); }
+           literal
          | IDENTIFIER            { $$ = alloc_identifier_expression($1); }
          | expr '+' expr         { $$ = alloc_binary_expression(ADD_EXPRESSION, $1, $3); }
          | expr '-' expr         { $$ = alloc_binary_expression(SUB_EXPRESSION, $1, $3); }
@@ -163,6 +175,12 @@ expr:
          | '(' expr ')'          { $$ = $2; }
          | bool_expr
          | func_call_expr
+         ;
+
+literal:
+           INT_LITERAL           { $$ = alloc_int_expression($1); }
+         | DOUBLE_LITERAL        { $$ = alloc_double_expression($1); }
+         | BOOL_LITERAL          { $$ = alloc_bool_expression($1); }
          ;
 
 bool_expr:

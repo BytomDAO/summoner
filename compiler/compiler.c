@@ -31,6 +31,9 @@ void add_definitions_to_compiler(DefinitionList *definitions)
             compiler->func_definition_list = chain_func_definition_list(
                 compiler->func_definition_list, pos->definition->u.func_d);
             break;
+        case DECLARATION_DEFINITION:
+            compiler->declaration_list = chain_declaration_definition_list(
+                compiler->declaration_list, pos->definition->u.declaration);
         default:
             break;
         }

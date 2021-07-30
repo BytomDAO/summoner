@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
         yyparse();
     }
 
-    Interpreter *interpreter = new Interpreter(compiler->func_definition_list);
+    Interpreter *interpreter = new Interpreter(compiler->func_definition_list, compiler->declaration_list);
     interpreter->exec();
     return 0;
 }

@@ -27,6 +27,7 @@
 "for"      return FOR;
 "nil"      return NIL;
 "var"      return VAR;
+"const"    return CONST;
 "func"     return FUNCTION;
 "return"   return RETURN;
 "break"    return BREAK;

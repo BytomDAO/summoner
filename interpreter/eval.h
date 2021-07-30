@@ -46,13 +46,16 @@ class Identifier
 {
 public:
     Identifier(string name, ExprValue value) : name(name), value(value) {}
+    Identifier(string name, ExprValue value, bool is_const) : name(name), value(value), is_const(is_const) {}
     void set_value(ExprValue value) { this->value = value; }
     string get_name() { return this->name; }
     ExprValue get_value() { return this->value; }
+    bool get_is_const() { return this->is_const; }
 
 private:
     string name;
     ExprValue value;
+    bool is_const;
 };
 
 class Scope
@@ -82,12 +85,13 @@ private:
 class Interpreter
 {
 public:
-    Interpreter(FuncDefinition *func_list) : func_definition_list(func_list), current_scope(nullptr){};
+    Interpreter(FuncDefinition *func_list, DeclarationList *declaration_list) : func_definition_list(func_list), declaration_list(declaration_list), current_scope(new Scope(nullptr)){};
     void exec();
 
 private:
     Scope *current_scope;
     FuncDefinition *func_definition_list;
+    DeclarationList *declaration_list;
 
     ExprValue *eval_func(FuncDefinition *fd, ArgumentList *arg_list);
     FuncDefinition *find_func_definition(const char *name);
