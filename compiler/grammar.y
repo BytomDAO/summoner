@@ -53,10 +53,7 @@ int yyerror(const char *s);
 %%
 
 translation_unit:
-                   definition_list                   { add_definitions_to_compiler($1); }
-                |  definition_list new_line          { add_definitions_to_compiler($1); }
-                |  new_line definition_list          { add_definitions_to_compiler($2); }
-                |  new_line definition_list new_line { add_definitions_to_compiler($2); }
+                  empty_or_new_line definition_list empty_or_new_line { add_definitions_to_compiler($2); }
                 ;
 
 definition_list:
@@ -109,8 +106,8 @@ stmt:
      ;
 
 const_stmt:
-            CONST IDENTIFIER '=' literal                 { $$ = alloc_const_declaration_stmt($2, NULL, $4); }
-          | CONST IDENTIFIER type_specifier '=' literal  { $$ = alloc_const_declaration_stmt($2, $3, $5); }
+            CONST IDENTIFIER '=' expr                 { $$ = alloc_const_declaration_stmt($2, NULL, $4); }
+          | CONST IDENTIFIER type_specifier '=' expr  { $$ = alloc_const_declaration_stmt($2, $3, $5); }
           ;
 
 declaration_stmt:
@@ -152,16 +149,9 @@ elseif:
        ;
 
 block:
-         '{' stmt_list                         { $<block>$ = open_block(); }
-                       '}'                     { $$ = close_block($<block>3, $2); }
-       | '{' new_line stmt_list                { $<block>$ = open_block(); }
-                                '}'            { $$ = close_block($<block>4, $3); }
-       | '{' stmt_list new_line                { $<block>$ = open_block(); }
-                                '}'            { $$ = close_block($<block>4, $2); }
-       | '{' new_line stmt_list new_line       { $<block>$ = open_block(); }
-                                         '}'   { $$ = close_block($<block>5, $3); }
-       | '{' new_line '}'                      { $<block>$ = alloc_block(NULL); }
-       | '{' '}'                               { $$ = alloc_block(NULL); }
+         '{' empty_or_new_line stmt_list empty_or_new_line       { $<block>$ = open_block(); }
+                                                           '}'   { $$ = close_block($<block>5, $3); }
+       | '{' empty_or_new_line '}'                               { $<block>$ = alloc_block(NULL); }
        ;
 
 expr:
@@ -205,9 +195,13 @@ argument_list:
              | argument_list ',' expr { $$ = chain_argument_list($1, $3); }
              ;
 
+empty_or_new_line:
+                 | new_line
+                 ;
+
 new_line:
-           '\n'
-         | new_line '\n'
+          '\n'
+        | new_line '\n'
 
 %%
 
