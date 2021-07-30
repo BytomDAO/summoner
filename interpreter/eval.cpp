@@ -223,6 +223,12 @@ ExprValue Interpreter::eval_expression(Expression *expr)
 
 void Interpreter::exec()
 {
+    for (DeclarationList *pos = this->declaration_list; pos != nullptr; pos = pos->next)
+    {
+        Declaration *declaration = pos->declaration;
+        this->current_scope->put_identifier(new Identifier(declaration->name, this->eval_expression(declaration->initializer)));
+    }
+
     FuncDefinition *func_d = this->find_func_definition("main");
     if (func_d == nullptr)
     {

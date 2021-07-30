@@ -126,7 +126,7 @@ Statement *alloc_return_stmt(Expression *expr)
     return stmt;
 }
 
-Statement* alloc_expression_stmt(Expression *expr)
+Statement *alloc_expression_stmt(Expression *expr)
 {
     Statement *stmt = alloc_stmt(EXPRESSION_STATEMENT);
     stmt->u.expr_s = expr;
@@ -299,5 +299,24 @@ DefinitionList *chain_definition_list(DefinitionList *list, Definition *definiti
     for (pos = list; pos->next; pos = pos->next)
         ;
     pos->next = alloc_definition_list(definition);
+    return list;
+}
+
+DeclarationList *chain_declaration_definition_list(DeclarationList *list, Declaration *declaration)
+{
+    DeclarationList *next = (DeclarationList *)malloc(sizeof(DeclarationList));
+    next->declaration = declaration;
+    next->next = NULL;
+
+    if (list == NULL)
+    {
+        return next;
+    }
+
+    DeclarationList *pos;
+    for (pos = list; pos->next; pos = pos->next)
+        ;
+
+    pos->next = next;
     return list;
 }
