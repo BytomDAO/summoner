@@ -1,6 +1,12 @@
 #include "summoner.h"
 #include <stdlib.h>
 #include <string.h>
+#include "../include/SVM_code.h"
+
+extern OpcodeInfo svm_opcode_info[];
+
+#define OPCODE_ALLOC_SIZE (256)
+#define LABEL_TABLE_ALLOC_SIZE (256)
 
 typedef struct
 {
@@ -73,9 +79,59 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
 }
 
 static void
+generate_code(OpcodeBuf *ob, SVM_Opcode code,  ...)
+{
+    va_list     ap;
+    int         i;
+    char        *param;
+    int         param_count;
+    int         start_pc;
+
+    va_start(ap, code);
+
+    param = svm_opcode_info[(int)code].parameter;
+    param_count = strlen(param);
+    if (ob->alloc_size < ob->size + 1 + (param_count * 2)) {
+        ob->code = realloc(ob->code, ob->alloc_size + OPCODE_ALLOC_SIZE);
+        ob->alloc_size += OPCODE_ALLOC_SIZE;
+    }
+
+    start_pc = ob->size;
+    ob->code[ob->size] = code;
+    ob->size++;
+    for (i = 0; param[i] != '\0'; i++) {
+        unsigned int value = va_arg(ap, int);
+        switch (param[i]) {
+        case 'b': /* byte */
+            ob->code[ob->size] = (SVM_Byte)value;
+            ob->size++;
+            break;
+        case 's': /* short(2byte int) */
+            ob->code[ob->size] = (SVM_Byte)(value >> 8);
+            ob->code[ob->size+1] = (SVM_Byte)(value & 0xff);
+            ob->size += 2;
+            break;
+        case 'p': /* constant pool index */
+            ob->code[ob->size] = (SVM_Byte)(value >> 8);
+            ob->code[ob->size+1] = (SVM_Byte)(value & 0xff);
+            ob->size += 2;
+            break;
+        default:
+            printf("param..%s, i..%d", param, i);
+            exit(1);
+        }
+    }
+
+    va_end(ap);
+}
+
+static void
 generate_statement_list(SVM_Executable *exe, Block *current_block,
                         StatementList *statement_list,
                         OpcodeBuf *ob);
+
+static void generate_expression(SVM_Executable *exe, Block *current_block,
+                                Expression *expr, OpcodeBuf *ob);
 
 static void
 add_function(SVM_Executable *exe, FuncDefinition *src)
@@ -131,10 +187,206 @@ generate_initializer(SVM_Executable *exe, Block *current_block,
 }
 
 static void
-generate_expression_statement(SVM_Executable *exe, Block *current_block,
+generate_boolean_expression(SVM_Executable *cf, Expression *expr,
+                            OpcodeBuf *ob)
+{
+    if (expr->u.boolean_value) {
+        generate_code(ob, TRUE, 1);
+    } else {
+        generate_code(ob, FALSE, 0);
+    }
+}
+
+static void
+generate_int_expression(SVM_Executable *cf, int value,
+                        OpcodeBuf *ob)
+{
+    if (value >= 0 && value < 256) {
+        generate_code(ob, PUSHDATA1, value);
+    } else if (value >= 0 && value < 65536) {
+        generate_code(ob, PUSHDATA2, value);
+    } else {
+    // TODO: add constpool
+    }
+}
+
+// NOTE: no bvm ops for double type
+static void
+generate_double_expression(SVM_Executable *cf, Expression *expr,
+                           OpcodeBuf *ob)
+{
+}
+
+static void
+generate_identifier(Declaration *decl, OpcodeBuf *ob)
+{
+}
+
+static void
+generate_identifier_expression(SVM_Executable *exe, Block *block,
+                               Expression *expr, OpcodeBuf *ob)
+{
+    switch (expr->kind) {
+    case DECLARATION_DEFINITION:
+        generate_identifier(expr->u.identifier, ob);
+        break;
+    case FUNC_DEFINITION:
+        generate_code(ob, expr->u.func_call_expression);
+        break;
+    case CONST_DEFINITION:
+        generate_identifier(expr->u.identifier, ob);
+        break;
+    case STRUCT_DEFINITION:
+        break;
+    default:
+        printf("bad default. kind..%d", expr->kind);
+        exit(1);
+    }
+}
+
+static void
+generate_function_call_expression(SVM_Executable *exe, Block *block,
+                                  Expression *expr, OpcodeBuf *ob)
+{
+}
+
+static void
+generate_binary_expression(SVM_Executable *exe, Block *block,
+                           Expression *expr, SVM_Opcode code,
+                           OpcodeBuf *ob)
+{
+    int offset;
+    Expression *left = expr->u.binary_expression->left;
+    Expression *right = expr->u.binary_expression->right;
+
+    generate_expression(exe, block, left, ob);
+    generate_expression(exe, block, right, ob);
+    // TODO : caculate offset
+    // offset = get_binary_expression_offset(left, right, code);
+
+    generate_code(ob, code);
+}
+
+static int
+get_label(OpcodeBuf *ob)
+{
+}
+
+static void
+set_label(OpcodeBuf *ob, int label)
+{
+}
+
+static void
+generate_logical_or_expression(SVM_Executable *exe, Block *block,
+                               Expression *expr,
+                               OpcodeBuf *ob)
+{
+    int true_label;
+
+    true_label = get_label(ob);
+    generate_expression(exe, block, expr->u.binary_expression->left, ob);
+    generate_code(ob, DUP);
+    generate_code(ob, JUMPIF, true_label);
+    generate_expression(exe, block, expr->u.binary_expression->right, ob);
+    generate_code(ob, OR);
+    set_label(ob, true_label);
+}
+
+
+static void
+generate_expression(SVM_Executable *exe, Block *current_block,
+                    Expression *expr, OpcodeBuf *ob)
+{
+    switch (expr->kind) {
+    case BOOL_EXPRESSION:
+        generate_boolean_expression(exe, expr, ob);
+        break;
+    case INT_EXPRESSION:
+        generate_int_expression(exe, expr->u.int_value,
+                                ob);
+        break;
+    case DOUBLE_EXPRESSION:
+        generate_double_expression(exe, expr, ob);
+        break;
+    case IDENTIFIER_EXPRESSION:
+        generate_identifier_expression(exe, current_block,
+                                       expr, ob);
+        break;
+   case FUNC_CALL_EXPRESSION:
+        generate_function_call_expression(exe, current_block,
+                                          expr, ob);
+        break;
+   case ADD_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   ADD, ob);
+        break;
+    case SUB_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   SUB, ob);
+        break;
+    case MUL_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   MUL, ob);
+        break;
+    case DIV_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   DIV, ob);
+        break;
+    case MOD_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   MOD, ob);
+        break;
+    case EQ_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   EQUAL, ob);
+        break;
+    case NE_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   NOTEQUAL0, ob);
+        break;
+    case GT_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   GREATERTHAN, ob);
+        break;
+    case GE_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   GREATERTHANOREQUAL, ob);
+        break;
+    case LT_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   LESSTHAN, ob);
+        break;
+    case LE_EXPRESSION:
+        generate_binary_expression(exe, current_block, expr,
+                                   LESSTHANOREQUAL, ob);
+    case MINUS_EXPRESSION:
+        generate_expression(exe, current_block, expr->u.unary_expression, ob);
+        generate_code(ob, NEGATE);
+        break;
+    case AND_EXPRESSION:
+        generate_logical_and_expression(exe, current_block, expr, ob);
+        break;
+    case OR_EXPRESSION:
+        generate_logical_or_expression(exe, current_block, expr, ob);
+        break;
+    case NOT_EXPRESSION:
+        generate_expression(exe, current_block, expr->u.unary_expression, ob);
+        generate_code(ob, NOT);
+        break;
+        default:
+    printf("expr->kind..%d\n", expr->kind);
+    exit(1);
+    }
+}
+
+static void
+generate_expression_statement(SVM_Executable *exe, Block *block,
                               Expression *expr,
                               OpcodeBuf *ob)
 {
+    generate_expression(exe, block, expr, ob);
+    generate_code(ob, DROP);
 }
 
 // TODO: huge swith-case
