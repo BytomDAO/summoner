@@ -108,22 +108,26 @@ Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elsei
     return stmt;
 }
 
-Statement *alloc_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer)
+Declaration *alloc_declaration(char *name, TypeSpecifier *type, Expression *initializer)
+{
+    Declaration *declaration = (Declaration *)malloc(sizeof(Declaration));
+    declaration->name = name;
+    declaration->type = type;
+    declaration->initializer = initializer;
+    declaration->next = NULL;
+    return declaration;
+}
+
+Statement *alloc_declaration_stmt(Declaration *declaration)
 {
     Statement *stmt = alloc_stmt(DECLARATION_STATEMENT);
-    Declaration *decl_s = (Declaration *)malloc(sizeof(Declaration));
-    decl_s->name = name;
-    decl_s->type = type;
-    decl_s->initializer = initializer;
-    stmt->u.decl_s = decl_s;
+    stmt->u.decl_s = declaration;
     return stmt;
 }
 
 Statement *alloc_const_declaration_stmt(char *name, TypeSpecifier *type, Expression *initializer)
 {
-    Statement *stmt = alloc_declaration_stmt(name, type, initializer);
-    stmt->u.decl_s->is_const = true;
-    return stmt;
+    return NULL;
 }
 
 Statement *alloc_return_stmt(Expression *expr)
@@ -309,18 +313,14 @@ DefinitionList *chain_definition_list(DefinitionList *list, Definition *definiti
     return list;
 }
 
-DeclarationList *chain_declaration_definition_list(DeclarationList *list, Declaration *declaration)
+Declaration *chain_declaration_list(Declaration *list, Declaration *next)
 {
-    DeclarationList *next = (DeclarationList *)malloc(sizeof(DeclarationList));
-    next->declaration = declaration;
-    next->next = NULL;
-
     if (list == NULL)
     {
         return next;
     }
 
-    DeclarationList *pos;
+    Declaration *pos;
     for (pos = list; pos->next; pos = pos->next)
         ;
 
