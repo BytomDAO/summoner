@@ -1,6 +1,6 @@
 #include "../include/SVM_code.h"
 
-OpcodeInfo dvm_opcode_info[] = {
+OpcodeInfo svm_opcode_info[] = {
     {"FALSE", "", -1},
     {"PUSHDATA1", "b", 1},
     {"PUSHDATA2", "s", 1},

@@ -2,8 +2,13 @@
 #define _SVMCODE_H_
 
 typedef enum {
-    FALSE = 1,
-    PUSHDATA1,
+    FALSE = 0x00,
+    ZERO = 0x00,
+
+    ONE = 0x51,
+    TRUE = 0x51,
+
+    PUSHDATA1 = 0x4c,
     PUSHDATA2,
     PUSHDATA4,
     NEGATE1,
