@@ -85,13 +85,13 @@ private:
 class Interpreter
 {
 public:
-    Interpreter(FuncDefinition *func_list, DeclarationList *declaration_list) : func_definition_list(func_list), declaration_list(declaration_list), current_scope(new Scope(nullptr)){};
+    Interpreter(FuncDefinition *func_list, Declaration *declaration_list) : func_definition_list(func_list), declaration_list(declaration_list), current_scope(new Scope(nullptr)){};
     void exec();
 
 private:
     Scope *current_scope;
     FuncDefinition *func_definition_list;
-    DeclarationList *declaration_list;
+    Declaration *declaration_list;
 
     ExprValue *eval_func(FuncDefinition *fd, ArgumentList *arg_list);
     FuncDefinition *find_func_definition(const char *name);

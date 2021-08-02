@@ -12,6 +12,7 @@ int yyerror(const char *s);
     double      double_value;
     int         int_value;
     struct Expression* expression;
+    struct Declaration* declaration;
     struct Statement *statement;
     struct StatementList *statement_list;
     struct Block *block;
@@ -31,6 +32,7 @@ int yyerror(const char *s);
 %token BOOL_T INT_T DOUBLE_T STRING_T
 
 %type <expression> expr bool_expr func_call_expr literal
+%type <declaration> variable_declaration variable_declaration_list
 %type <statement> stmt if_stmt return_stmt declaration_stmt variable_declaration_stmt const_stmt
 %type <statement_list> stmt_list
 %type <block> block
@@ -53,7 +55,7 @@ int yyerror(const char *s);
 %%
 
 translation_unit:
-                  empty_or_new_line definition_list empty_or_new_line { add_definitions_to_compiler($2); }
+                  new_line_option definition_list new_line_option { add_definitions_to_compiler($2); }
                 ;
 
 definition_list:
@@ -111,15 +113,25 @@ const_stmt:
           ;
 
 declaration_stmt:
-                    IDENTIFIER DECL_ASSIGN expr            { $$ = alloc_declaration_stmt($1, NULL, $3); }
-                  | variable_declaration_stmt  
+                    IDENTIFIER DECL_ASSIGN expr            { $$ = alloc_declaration_stmt(alloc_declaration($1, NULL, $3)); }
+                  | variable_declaration_stmt 
                   ;
 
 variable_declaration_stmt:
-                           VAR IDENTIFIER type_specifier          { $$ = alloc_declaration_stmt($2, $3, NULL); }
-                         | VAR IDENTIFIER type_specifier '=' expr { $$ = alloc_declaration_stmt($2, $3, $5); }
-                         | VAR IDENTIFIER '=' expr                { $$ = alloc_declaration_stmt($2, NULL, $4); }
+                           VAR new_line_option variable_declaration                               { $$ = alloc_declaration_stmt($3); }
+                         | VAR '(' new_line_option variable_declaration_list new_line_option ')'  { $$ = alloc_declaration_stmt($4); }
                          ;
+
+variable_declaration_list:
+                           variable_declaration
+                         | variable_declaration_list new_line variable_declaration { $$ = chain_declaration_list($1, $3); }
+                         ;
+
+variable_declaration:       
+                      IDENTIFIER type_specifier          { $$ = alloc_declaration($1, $2, NULL); }
+                    | IDENTIFIER type_specifier '=' expr { $$ = alloc_declaration($1, $2, $4); }
+                    | IDENTIFIER '=' expr                { $$ = alloc_declaration($1, NULL, $3); }
+                    ;
 
 type_specifier:
                 BOOL_T   { $$ = alloc_type_specifier(BOOLEAN_TYPE, NULL); }
@@ -145,13 +157,13 @@ elseif_list:
            ;
 
 elseif:
-       ELSE IF bool_expr block { $$ = alloc_else_if($3, $4); }
-       ;
+        ELSE IF bool_expr block { $$ = alloc_else_if($3, $4); }
+      ;
 
 block:
-         '{' empty_or_new_line stmt_list empty_or_new_line       { $<block>$ = open_block(); }
-                                                           '}'   { $$ = close_block($<block>5, $3); }
-       | '{' empty_or_new_line '}'                               { $<block>$ = alloc_block(NULL); }
+         '{' new_line_option stmt_list new_line_option       { $<block>$ = open_block(); }
+                                                       '}'   { $$ = close_block($<block>5, $3); }
+       | '{' new_line_option '}'                             { $<block>$ = alloc_block(NULL); }
        ;
 
 expr:
@@ -195,9 +207,9 @@ argument_list:
              | argument_list ',' expr { $$ = chain_argument_list($1, $3); }
              ;
 
-empty_or_new_line:
-                 | new_line
-                 ;
+new_line_option:
+               | new_line
+               ;
 
 new_line:
           '\n'

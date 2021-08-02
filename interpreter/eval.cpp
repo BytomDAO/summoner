@@ -223,11 +223,9 @@ ExprValue Interpreter::eval_expression(Expression *expr)
 
 void Interpreter::exec()
 {
-    for (DeclarationList *pos = this->declaration_list; pos != nullptr; pos = pos->next)
+    for (Declaration *pos = this->declaration_list; pos != nullptr; pos = pos->next)
     {
-        Declaration *declaration = pos->declaration;
-        bool is_const = declaration->is_const;
-        this->current_scope->put_identifier(new Identifier(declaration->name, this->eval_expression(declaration->initializer), is_const));
+        this->current_scope->put_identifier(new Identifier(pos->name, this->eval_expression(pos->initializer), false));
     }
 
     FuncDefinition *func_d = this->find_func_definition("main");
@@ -360,34 +358,36 @@ StmtResult Interpreter::eval_stmt(Statement *stmt)
     }
     case DECLARATION_STATEMENT:
     {
-        Declaration *declaration = stmt->u.decl_s;
-        ExprValue init_value;
-        if (declaration->type != nullptr)
+        for (Declaration *pos = stmt->u.decl_s; pos != nullptr; pos = pos->next)
         {
-            switch (declaration->type->basic_type)
+            ExprValue init_value;
+            if (pos->type != nullptr)
             {
-            case BOOLEAN_TYPE:
-                init_value.type = EXPR_BOOL_VALUE;
-                init_value.u.boolean_value = false;
-                break;
-            case INT_TYPE:
-                init_value.type = EXPR_INT_VALUE;
-                init_value.u.int_value = 0;
-                break;
-            case DOUBLE_TYPE:
-                init_value.type = EXPR_DOUBLE_VALUE;
-                init_value.u.double_value = 0.0;
-                break;
-            default:
-                break;
+                switch (pos->type->basic_type)
+                {
+                case BOOLEAN_TYPE:
+                    init_value.type = EXPR_BOOL_VALUE;
+                    init_value.u.boolean_value = false;
+                    break;
+                case INT_TYPE:
+                    init_value.type = EXPR_INT_VALUE;
+                    init_value.u.int_value = 0;
+                    break;
+                case DOUBLE_TYPE:
+                    init_value.type = EXPR_DOUBLE_VALUE;
+                    init_value.u.double_value = 0.0;
+                    break;
+                default:
+                    break;
+                }
             }
-        }
 
-        if (declaration->initializer != nullptr)
-        {
-            init_value = this->eval_expression(declaration->initializer);
+            if (pos->initializer != nullptr)
+            {
+                init_value = this->eval_expression(pos->initializer);
+            }
+            this->current_scope->put_identifier(new Identifier(pos->name, init_value));
         }
-        this->current_scope->put_identifier(new Identifier(declaration->name, init_value));
         return result;
     }
     default:
