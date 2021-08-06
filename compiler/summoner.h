@@ -9,6 +9,7 @@ typedef enum
     BOOL_EXPRESSION = 1,
     INT_EXPRESSION,
     DOUBLE_EXPRESSION,
+    STRING_EXPRESSION,
     IDENTIFIER_EXPRESSION,
     FUNC_CALL_EXPRESSION,
     ADD_EXPRESSION,
@@ -53,6 +54,7 @@ typedef struct Expression
         bool boolean_value;
         int int_value;
         double double_value;
+        char *str_value;
         char *identifier;
         struct BinaryExpression *binary_expression;
         struct Expression *unary_expression;
@@ -83,6 +85,7 @@ Expression *alloc_expression(ExpressionKind kind);
 Expression *alloc_int_expression(int value);
 Expression *alloc_double_expression(double value);
 Expression *alloc_bool_expression(bool value);
+Expression *alloc_string_expression(char *value);
 Expression *alloc_identifier_expression(char *identifier);
 Expression *alloc_unary_expression(ExpressionKind kind, Expression *unaryExpr);
 Expression *alloc_binary_expression(ExpressionKind kind, Expression *left, Expression *right);
@@ -308,5 +311,10 @@ typedef struct SVM_Executable
     SVM_Constant *constant_definition;
     SVM_CodeBlock top_level;
 } SVM_Executable;
+
+/** string.c */
+void open_string_literal(void);
+void add_string_literal(int letter);
+char *close_string_literal(void);
 
 #endif

@@ -37,6 +37,13 @@ Expression *alloc_bool_expression(bool value)
     return expr;
 }
 
+Expression *alloc_string_expression(char *value)
+{
+    Expression *expr = alloc_expression(STRING_EXPRESSION);
+    expr->u.str_value = value;
+    return expr;
+}
+
 Expression *alloc_unary_expression(ExpressionKind kind, Expression *unaryExpr)
 {
     Expression *expr = alloc_expression(kind);

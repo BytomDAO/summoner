@@ -13,6 +13,7 @@ typedef enum
     EXPR_BOOL_VALUE = 1,
     EXPR_INT_VALUE,
     EXPR_DOUBLE_VALUE,
+    EXPR_STRING_VALUE,
 } ExprValueType;
 
 typedef struct ExprValue
@@ -23,6 +24,7 @@ typedef struct ExprValue
         bool boolean_value;
         int int_value;
         double double_value;
+        char *str_value;
     } u;
 
 } ExprValue;

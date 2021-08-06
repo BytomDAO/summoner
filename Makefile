@@ -1,4 +1,4 @@
-output: main.o lex.o grammar.o create.o compiler.o codegen.o opcode.o
+output: main.o lex.o grammar.o create.o string.o compiler.o codegen.o opcode.o
 	$(CC) -o bin/main $^
 main.o : main/main.c
 	$(CC) -c main/main.c
@@ -16,6 +16,8 @@ grammar.o : compiler/grammar.y
 lex.o : compiler/lex.l grammar.o
 	lex $<
 	$(CC) -c lex.yy.c -o lex.o
+string.o : compiler/string.c
+	$(CC) -c $< -o string.o
 
 clean:
 	rm y.tab.*
