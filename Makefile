@@ -20,7 +20,7 @@ string.o : compiler/string.c
 	$(CC) -c $< -o string.o
 
 clean:
-	rm y.tab.*
-	rm lex.yy.c
-	rm *.o
-	rm bin/main
+	rm -f y.tab.*
+	rm -f lex.yy.c
+	rm -f *.o
+	rm -f bin/main
