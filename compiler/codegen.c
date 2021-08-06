@@ -218,7 +218,7 @@ generate_double_expression(SVM_Executable *cf, Expression *expr,
 }
 
 static void
-generate_identifier(Declaration *decl, OpcodeBuf *ob)
+generate_identifier(char *ident, OpcodeBuf *ob)
 {
 }
 
@@ -231,7 +231,7 @@ generate_identifier_expression(SVM_Executable *exe, Block *block,
         generate_identifier(expr->u.identifier, ob);
         break;
     case FUNC_DEFINITION:
-        generate_code(ob, expr->u.func_call_expression);
+        generate_code(ob, INVOKE);
         break;
     case CONST_DEFINITION:
         generate_identifier(expr->u.identifier, ob);
@@ -259,7 +259,7 @@ static void
 generate_function_call_expression(SVM_Executable *exe, Block *block,
                                   Expression *expr, OpcodeBuf *ob)
 {
-    FuncCallExpression *fce = &expr->u.func_call_expression;
+    FuncCallExpression *fce = expr->u.func_call_expression;
     generate_push_argument(exe, block, fce->argument_list, ob);
     generate_expression(exe, block, fce->argument_list->expr, ob);
     // which op for func call?
@@ -286,6 +286,7 @@ generate_binary_expression(SVM_Executable *exe, Block *block,
 static int
 get_label(OpcodeBuf *ob)
 {
+    return 0;
 }
 
 static void
@@ -294,9 +295,9 @@ set_label(OpcodeBuf *ob, int label)
 }
 
 static void
-generate_logical_or_expression(SVM_Executable *exe, Block *block,
-                               Expression *expr,
-                               OpcodeBuf *ob)
+generate_logical_expression(SVM_Executable *exe, Block *block,
+                               Expression *expr, OpcodeBuf *ob,
+                               SVM_Opcode code)
 {
     int true_label;
 
@@ -305,7 +306,7 @@ generate_logical_or_expression(SVM_Executable *exe, Block *block,
     generate_code(ob, DUP);
     generate_code(ob, JUMPIF, true_label);
     generate_expression(exe, block, expr->u.binary_expression->right, ob);
-    generate_code(ob, OR);
+    generate_code(ob, code);
     set_label(ob, true_label);
 }
 
@@ -381,10 +382,10 @@ generate_expression(SVM_Executable *exe, Block *current_block,
         generate_code(ob, NEGATE);
         break;
     case AND_EXPRESSION:
-        generate_logical_and_expression(exe, current_block, expr, ob);
+        generate_logical_expression(exe, current_block, expr, ob, AND);
         break;
     case OR_EXPRESSION:
-        generate_logical_or_expression(exe, current_block, expr, ob);
+        generate_logical_expression(exe, current_block, expr, ob, OR);
         break;
     case NOT_EXPRESSION:
         generate_expression(exe, current_block, expr->u.unary_expression, ob);

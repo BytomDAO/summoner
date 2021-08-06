@@ -90,7 +90,8 @@ typedef enum {
     INDEX,
     ENTRYID,
     OUTPUTID,
-    BLOCKHEIGHT
+    BLOCKHEIGHT,
+    INVOKE
 }SVM_Opcode;
 
 typedef struct {
