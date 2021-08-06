@@ -40,7 +40,7 @@ void lex_err(char *str) {
   return STRING_LITERAL;
 }
 <STRING_STATE>\\   BEGIN(STRING_ESCAPE);
-<STRING_STATE>\n   lex_err("new line exist in interpreted string literals");
+<STRING_STATE>\n   lex_err("new line string");
 <STRING_STATE>.    add_string_literal(yytext[0]);
 
 <STRING_ESCAPE>\" { add_string_literal('"');  BEGIN(STRING_STATE); }
