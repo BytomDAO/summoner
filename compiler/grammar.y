@@ -9,6 +9,7 @@ int yyerror(const char *s);
 
 %union {
     char        *identifier;
+    char        *str_value;
     double      double_value;
     int         int_value;
     struct Expression* expression;
@@ -24,10 +25,10 @@ int yyerror(const char *s);
     struct ArgumentList *argument_list;
 }
 
-%token <int_value> BOOL_LITERAL
 %token <double_value> DOUBLE_LITERAL
-%token <int_value> INT_LITERAL
-%token <identifier> IDENTIFIER;
+%token <int_value> INT_LITERAL BOOL_LITERAL
+%token <str_value> STRING_LITERAL
+%token <identifier> IDENTIFIER
 %token VAR CONST FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
 %token BOOL_T INT_T DOUBLE_T STRING_T
 
@@ -183,6 +184,7 @@ literal:
            INT_LITERAL           { $$ = alloc_int_expression($1); }
          | DOUBLE_LITERAL        { $$ = alloc_double_expression($1); }
          | BOOL_LITERAL          { $$ = alloc_bool_expression($1); }
+         | STRING_LITERAL        { $$ = alloc_string_expression($1); }
          ;
 
 bool_expr:

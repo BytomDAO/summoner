@@ -174,6 +174,10 @@ ExprValue Interpreter::eval_expression(Expression *expr)
         v.type = EXPR_DOUBLE_VALUE;
         v.u.double_value = expr->u.double_value;
         return v;
+    case STRING_EXPRESSION:
+        v.type = EXPR_STRING_VALUE;
+        v.u.str_value = expr->u.str_value;
+        return v;
     case MINUS_EXPRESSION:
         v = this->eval_expression(expr->u.unary_expression);
         if (v.type == EXPR_INT_VALUE)
@@ -408,6 +412,9 @@ void print_expr_value(ExprValue val)
         break;
     case EXPR_BOOL_VALUE:
         printf(">>>%s\n", val.u.boolean_value ? "true" : "false");
+        break;
+    case EXPR_STRING_VALUE:
+        printf(">>>%s\n", val.u.str_value);
         break;
     default:
         printf("invalid expression type when print expr value:%d", val.type);
