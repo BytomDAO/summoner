@@ -245,9 +245,25 @@ generate_identifier_expression(SVM_Executable *exe, Block *block,
 }
 
 static void
+generate_push_argument(SVM_Executable *exe, Block *block,
+                       ArgumentList *arg_list, OpcodeBuf *ob)
+{
+    ArgumentList *arg_pos;
+
+    for (arg_pos = arg_list; arg_pos; arg_pos = arg_pos->next) {
+        generate_expression(exe, block, arg_pos->expr, ob);
+    }
+}
+
+static void
 generate_function_call_expression(SVM_Executable *exe, Block *block,
                                   Expression *expr, OpcodeBuf *ob)
 {
+    FuncCallExpression *fce = &expr->u.func_call_expression;
+    generate_push_argument(exe, block, fce->argument_list, ob);
+    generate_expression(exe, block, fce->argument_list->expr, ob);
+    // which op for func call?
+    // generate_code(ob, code);
 }
 
 static void
