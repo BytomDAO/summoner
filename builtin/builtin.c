@@ -10,8 +10,8 @@ typedef struct
     const char *op_codes;
 } BuiltinFun;
 
-static BasicType sha3_params[] = {STRING_TYPE};
-static BasicType sha256_params[] = {STRING_TYPE};
+static BasicType sha3_params[] = {HEX_TYPE};
+static BasicType sha256_params[] = {HEX_TYPE};
 static BasicType abs_params[] = {INT_TYPE};
 static BasicType min_params[] = {INT_TYPE, INT_TYPE};
 static BasicType max_params[] = {INT_TYPE, INT_TYPE};
