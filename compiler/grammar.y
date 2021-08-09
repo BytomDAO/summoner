@@ -30,11 +30,11 @@ int yyerror(const char *s);
 %token <str_value> STRING_LITERAL
 %token <identifier> IDENTIFIER
 %token VAR CONST FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
-%token BOOL_T INT_T DOUBLE_T STRING_T
+%token BOOL_T INT_T DOUBLE_T STRING_T ASSET_T HASH_T AMOUNT_T PUBKEY_T SIG_T HEX_T
 
 %type <expression> expr bool_expr func_call_expr literal
 %type <declaration> variable_declaration variable_declaration_list
-%type <statement> stmt if_stmt return_stmt declaration_stmt variable_declaration_stmt const_stmt
+%type <statement> stmt if_stmt return_stmt declaration_stmt assign_stmt compound_assign_stmt variable_declaration_stmt const_stmt
 %type <statement_list> stmt_list
 %type <block> block
 %type <elseif> elseif elseif_list
@@ -44,7 +44,7 @@ int yyerror(const char *s);
 %type <definition_list> definition_list
 %type <argument_list> argument_list
 
-%nonassoc '=' DECL_ASSIGN
+%nonassoc '=' ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN DECL_ASSIGN
 %left AND OR
 %nonassoc EQ NE
 %nonassoc '>' '<' LE GE
@@ -100,13 +100,25 @@ stmt_list:
         ;
 
 stmt:
-       IDENTIFIER '=' expr { $$ = alloc_assign_stmt($1, $3); }
-     | expr                { $$ = alloc_expression_stmt($1); }
+       expr                { $$ = alloc_expression_stmt($1); }
      | block               { $$ = alloc_block_stmt($1); }
+     | assign_stmt
      | if_stmt
      | declaration_stmt
      | return_stmt
      ;
+
+assign_stmt:
+             IDENTIFIER '=' expr  { $$ = alloc_assign_stmt($1, $3); }
+           | compound_assign_stmt 
+           ;
+
+compound_assign_stmt:
+                      IDENTIFIER ADD_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, ADD_EXPRESSION, $3); }
+                    | IDENTIFIER SUB_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, SUB_EXPRESSION, $3); }
+                    | IDENTIFIER MUL_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, MUL_EXPRESSION, $3); }
+                    | IDENTIFIER DIV_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, DIV_EXPRESSION, $3); }
+                    ;
 
 const_stmt:
             CONST IDENTIFIER '=' expr                 { $$ = alloc_const_declaration_stmt($2, NULL, $4); }
@@ -139,6 +151,12 @@ type_specifier:
               | INT_T    { $$ = alloc_type_specifier(INT_TYPE, NULL); }
               | DOUBLE_T { $$ = alloc_type_specifier(DOUBLE_TYPE, NULL); }
               | STRING_T { $$ = alloc_type_specifier(STRING_TYPE, NULL); }
+              | ASSET_T  { $$ = alloc_type_specifier(ASSET_TYPE, NULL); }
+              | HASH_T   { $$ = alloc_type_specifier(HASH_TYPE, NULL); }
+              | AMOUNT_T { $$ = alloc_type_specifier(AMOUNT_TYPE, NULL); }
+              | PUBKEY_T { $$ = alloc_type_specifier(PUBKEY_TYPE, NULL); }
+              | SIG_T    { $$ = alloc_type_specifier(SIG_TYPE, NULL); }
+              | HEX_T    { $$ = alloc_type_specifier(HEX_TYPE, NULL); }
               ;
 
 return_stmt:

@@ -58,6 +58,10 @@ void lex_err(char *str) {
 }
 
 ":="       return DECL_ASSIGN;
+"+="       return ADD_ASSIGN;
+"-="       return SUB_ASSIGN;
+"*="       return MUL_ASSIGN;
+"/="       return DIV_ASSIGN;
 ">="       return GE;
 "<="       return LE;
 "=="       return EQ;
@@ -78,6 +82,11 @@ void lex_err(char *str) {
 "int"      return INT_T;
 "double"   return DOUBLE_T;
 "string"   return STRING_T;
+"asset"    return ASSET_T;
+"hash"     return HASH_T;
+"amount"   return AMOUNT_T;
+"pubkey"   return PUBKEY_T;
+"hex"      return HEX_T;
 
 "true"|"false" {
     yylval.int_value = strcmp(yytext, "false");
