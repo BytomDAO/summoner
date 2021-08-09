@@ -36,6 +36,13 @@ typedef enum
     INT_TYPE,
     DOUBLE_TYPE,
     STRING_TYPE,
+    ASSET_TYPE,
+    HASH_TYPE,
+    AMOUNT_TYPE,
+    PUBKEY_TYPE,
+    SIG_TYPE,
+    HEX_TYPE,
+    VOID_TYPE,
     STRUCT_TYPE,
 } BasicType;
 
@@ -159,6 +166,7 @@ typedef struct IfStatement
 
 Statement *alloc_stmt(StatementKind kind);
 Statement *alloc_assign_stmt(char *variable, Expression *operand);
+Statement *alloc_compound_assign_stmt(char *variable, ExpressionKind kind, Expression *operand);
 Statement *alloc_block_stmt(Block *block);
 Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
 Declaration *alloc_declaration(char *name, TypeSpecifier *type, Expression *initializer);

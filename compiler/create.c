@@ -103,6 +103,11 @@ Statement *alloc_assign_stmt(char *variable, Expression *operand)
     return stmt;
 }
 
+Statement *alloc_compound_assign_stmt(char *variable, ExpressionKind kind, Expression *operand)
+{
+    return alloc_assign_stmt(variable, alloc_binary_expression(kind, alloc_identifier_expression(variable), operand));
+}
+
 Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block)
 {
     Statement *stmt = alloc_stmt(IF_STATEMENT);
