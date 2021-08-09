@@ -86,6 +86,7 @@ void lex_err(char *str) {
 "hash"     return HASH_T;
 "amount"   return AMOUNT_T;
 "pubkey"   return PUBKEY_T;
+"sig"      return SIG_T;
 "hex"      return HEX_T;
 
 "true"|"false" {
