@@ -33,5 +33,5 @@ BuiltinFun builtin_funs[] = {
     {"below", below_params, ARRAY_SIZE(below_params), BOOLEAN_TYPE, "BLOCKHEIGHT GREATERTHAN"},
     {"above", above_params, ARRAY_SIZE(above_params), BOOLEAN_TYPE, "BLOCKHEIGHT LESSTHAN"},
     {"lock", lock_params, ARRAY_SIZE(lock_params), VOID_TYPE, ""},
-    {"verify", verify_params, ARRAY_SIZE(verify_params), VOID_TYPE, ""},
+    {"verify", verify_params, ARRAY_SIZE(verify_params), VOID_TYPE, "VERIFY"},
 };
