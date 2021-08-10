@@ -134,11 +134,47 @@ static void generate_expression(SVM_Executable *exe, Block *current_block,
                                 Expression *expr, OpcodeBuf *ob);
 
 static void
+fix_labels(OpcodeBuf *ob)
+{
+   int i;
+    int j;
+    OpcodeInfo *info;
+    int label;
+    int address;
+
+    for (i = 0; i < ob->size; i++) {
+        if (ob->code[i] == JUMP
+            || ob->code[i] == JUMPIF) {
+            label = (ob->code[i+1] << 8) + (ob->code[i+2]);
+            address = ob->label_table[label].label_address;
+            ob->code[i+1] = (SVM_Byte)(address >> 8);
+            ob->code[i+2] = (SVM_Byte)(address &0xff);
+        }
+        info = &svm_opcode_info[ob->code[i]];
+        for (j = 0; info->parameter[j] != '\0'; j++) {
+            switch (info->parameter[j]) {
+            case 'b':
+                i++;
+                break;
+            case 's':
+            case 'p':
+                i += 2;
+                break;
+            default:
+                printf("param..%s, j..%d", info->parameter, j);
+                exit(1);
+            }
+        }
+    }
+}                               
+
+static void
 add_function(SVM_Executable *exe, FuncDefinition *src)
 {
     OpcodeBuf ob;
     init_opcode_buf(&ob);
     generate_statement_list(exe, src->block, src->block->statement_list, &ob);
+    fix_labels(&ob);
 }
 
 static void
@@ -286,12 +322,25 @@ generate_binary_expression(SVM_Executable *exe, Block *block,
 static int
 get_label(OpcodeBuf *ob)
 {
-    return 0;
+    int ret;
+
+    if (ob->label_table_alloc_size < ob->label_table_size + 1) {
+        ob->label_table = realloc(ob->label_table,
+                                    (ob->label_table_alloc_size
+                                    + LABEL_TABLE_ALLOC_SIZE)
+                                    * sizeof(LabelTable));
+        ob->label_table_alloc_size += LABEL_TABLE_ALLOC_SIZE;
+    }
+    ret = ob->label_table_size;
+    ob->label_table_size++;
+
+    return ret;
 }
 
 static void
 set_label(OpcodeBuf *ob, int label)
 {
+    ob->label_table[label].label_address = ob->size;
 }
 
 static void
@@ -443,11 +492,6 @@ generate_statement_list(SVM_Executable *exe, Block *current_block,
             // DBG_assert(0, ("pos->statement->kind..%d\n", pos->statement->kind));
         }
     }
-}
-
-static void
-fix_labels(OpcodeBuf *ob)
-{
 }
 
 static SVM_Byte *
