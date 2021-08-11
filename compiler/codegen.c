@@ -285,6 +285,7 @@ generate_block_statement(SVM_Executable *exe, Block *current_block,
                          Block *block_stmt,
                          OpcodeBuf *ob)
 {
+    generate_statement_list(exe, current_block, block_stmt->statement_list, ob);
 }
 
 static void
