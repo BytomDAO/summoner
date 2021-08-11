@@ -289,6 +289,16 @@ typedef struct
     SVM_LineNumber *line_number;
 } SVM_CodeBlock;
 
+typedef struct {
+    TypeSpecifier   *type;
+    char            *name;
+    int             parameter_count;
+    SVM_Variable    *parameter;
+    int             local_variable_count;
+    SVM_Variable    *local_variable;
+    SVM_CodeBlock   code_block;
+} SVM_Function;
+
 // TODO: perfect Compiler
 typedef struct Compiler
 {
@@ -311,8 +321,8 @@ typedef struct SVM_Executable
     SVM_ConstantPool *constant_pool;
     int global_variable_count;
     SVM_Variable *global_variable;
-    //int               *function_count;
-    //SVM_Function      *function;
+    int               function_count;
+    SVM_Function      *function;
     int type_specifier_count;
     TypeSpecifier *type_specifier;
     int constant_count;

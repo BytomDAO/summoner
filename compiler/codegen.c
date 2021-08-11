@@ -58,6 +58,53 @@ init_opcode_buf(OpcodeBuf *ob)
 }
 
 static void
+fix_labels(OpcodeBuf *ob)
+{
+   int i;
+    int j;
+    OpcodeInfo *info;
+    int label;
+    int address;
+
+    for (i = 0; i < ob->size; i++) {
+        if (ob->code[i] == JUMP
+            || ob->code[i] == JUMPIF) {
+            label = (ob->code[i+1] << 8) + (ob->code[i+2]);
+            address = ob->label_table[label].label_address;
+            ob->code[i+1] = (SVM_Byte)(address >> 8);
+            ob->code[i+2] = (SVM_Byte)(address &0xff);
+        }
+        info = &svm_opcode_info[ob->code[i]];
+        for (j = 0; info->parameter[j] != '\0'; j++) {
+            switch (info->parameter[j]) {
+            case 'b':
+                i++;
+                break;
+            case 's':
+            case 'p':
+                i += 2;
+                break;
+            default:
+                printf("param..%s, j..%d", info->parameter, j);
+                exit(1);
+            }
+        }
+    }
+}
+
+static SVM_Byte *
+fix_opcode_buf(OpcodeBuf *ob)
+{
+    SVM_Byte *ret;
+
+    fix_labels(ob);
+    ret = realloc(ob->code, ob->size);
+    free(ob->label_table);
+
+    return ret;
+}
+
+static void
 add_global_variable(Compiler *compiler, SVM_Executable *exe)
 {
     Declaration *dl;
@@ -133,40 +180,29 @@ generate_statement_list(SVM_Executable *exe, Block *current_block,
 static void generate_expression(SVM_Executable *exe, Block *current_block,
                                 Expression *expr, OpcodeBuf *ob);
 
-static void
-fix_labels(OpcodeBuf *ob)
+/*
+// TODO: LocalVariable for FuncDefinition
+static SVM_Variable *
+copy_local_variables(FuncDefinition *fd, int param_count)
 {
-   int i;
-    int j;
-    OpcodeInfo *info;
-    int label;
-    int address;
+    int i;
+    int local_variable_count;
+    SVM_Variable *dest;
 
-    for (i = 0; i < ob->size; i++) {
-        if (ob->code[i] == JUMP
-            || ob->code[i] == JUMPIF) {
-            label = (ob->code[i+1] << 8) + (ob->code[i+2]);
-            address = ob->label_table[label].label_address;
-            ob->code[i+1] = (SVM_Byte)(address >> 8);
-            ob->code[i+2] = (SVM_Byte)(address &0xff);
-        }
-        info = &svm_opcode_info[ob->code[i]];
-        for (j = 0; info->parameter[j] != '\0'; j++) {
-            switch (info->parameter[j]) {
-            case 'b':
-                i++;
-                break;
-            case 's':
-            case 'p':
-                i += 2;
-                break;
-            default:
-                printf("param..%s, j..%d", info->parameter, j);
-                exit(1);
-            }
-        }
+    local_variable_count = fd->local_variable_count - param_count;
+
+    dest = malloc(sizeof(SVM_LocalVariable) * local_variable_count);
+
+    for (i = 0; i < local_variable_count; i++) {
+        dest[i].name
+            = strdup(fd->local_variable[i+param_count]->name);
+        dest[i].type
+            = copy_type_specifier(fd->local_variable[i+param_count]->type);
     }
-}                               
+
+    return dest;
+}
+*/
 
 static void
 add_function(SVM_Executable *exe, FuncDefinition *src)
@@ -174,7 +210,14 @@ add_function(SVM_Executable *exe, FuncDefinition *src)
     OpcodeBuf ob;
     init_opcode_buf(&ob);
     generate_statement_list(exe, src->block, src->block->statement_list, &ob);
-    fix_labels(&ob);
+    exe->function->code_block.code_size = ob.size;
+    exe->function->code_block.code = fix_opcode_buf(&ob);
+    exe->function->code_block.line_number_size = ob.line_number_size;
+    exe->function->code_block.line_number = ob.line_number;
+    //exe->function->local_variable
+    //    = copy_local_variables(src, exe->function->parameter_count);
+    //exe->function->local_variable
+    //    = src->local_variable_count - dest->parameter_count;
 }
 
 static void
@@ -492,18 +535,6 @@ generate_statement_list(SVM_Executable *exe, Block *current_block,
             // DBG_assert(0, ("pos->statement->kind..%d\n", pos->statement->kind));
         }
     }
-}
-
-static SVM_Byte *
-fix_opcode_buf(OpcodeBuf *ob)
-{
-    SVM_Byte *ret;
-
-    fix_labels(ob);
-    ret = realloc(ob->code, ob->size);
-    free(ob->label_table);
-
-    return ret;
 }
 
 static void
