@@ -121,7 +121,7 @@ typedef struct Declaration
 } Declaration;
 
 typedef enum {
-    NORMAL_ASSIGN = 1,
+    DECL_ASSIGN = 1,
     ADD_ASSIGN,
     SUB_ASSIGN,
     MUL_ASSIGN,

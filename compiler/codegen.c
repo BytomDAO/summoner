@@ -250,14 +250,14 @@ generate_assign_statement(SVM_Executable *exe, Block *current_block,
                           AssignStatement *assign_stmt,
                           OpcodeBuf *ob)
 {
-    if (assign_stmt->operator != NORMAL_ASSIGN) {
+    if (assign_stmt->operator != DECL_ASSIGN) {
         generate_expression(exe, current_block,
                             assign_stmt->left, ob);
     }
     generate_expression(exe, current_block, assign_stmt->operand, ob);
 
     switch (assign_stmt->operator) {
-    case NORMAL_ASSIGN :
+    case DECL_ASSIGN :
         break;
     case ADD_ASSIGN:
         generate_code(ob, ADD);
