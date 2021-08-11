@@ -15,6 +15,7 @@ int main(int argc, char *argv[])
     if (yyin == NULL)
     {
         cout << "fail to open file:" << argv[1] << endl;
+        return 1;
     }
     else
     {

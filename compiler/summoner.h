@@ -17,6 +17,7 @@ typedef enum
     MUL_EXPRESSION,
     DIV_EXPRESSION,
     MINUS_EXPRESSION,
+    TYPE_CAST_EXPRESSION,
     MOD_EXPRESSION, /* % */
     EQ_EXPRESSION,  /* == */
     NE_EXPRESSION,  /* != */
@@ -67,7 +68,6 @@ typedef struct Expression
         struct Expression *unary_expression;
         struct FuncCallExpression *func_call_expression;
     } u;
-
 } Expression;
 
 typedef struct BinaryExpression
@@ -94,6 +94,7 @@ Expression *alloc_double_expression(double value);
 Expression *alloc_bool_expression(bool value);
 Expression *alloc_string_expression(char *value);
 Expression *alloc_identifier_expression(char *identifier);
+Expression *alloc_type_cast_expression(TypeSpecifier *type, Expression *expr);
 Expression *alloc_unary_expression(ExpressionKind kind, Expression *unaryExpr);
 Expression *alloc_binary_expression(ExpressionKind kind, Expression *left, Expression *right);
 Expression *alloc_func_call_expression(char *identifier, ArgumentList *argument_list);
@@ -298,6 +299,7 @@ typedef struct Compiler
     FuncDefinition *func_definition_list;
     Block *current_block;
     Declaration *declaration_list;
+    int current_line_number;
 } Compiler;
 
 Compiler *create_compiler();
@@ -324,5 +326,8 @@ typedef struct SVM_Executable
 void open_string_literal(void);
 void add_string_literal(int letter);
 char *close_string_literal(void);
+
+/** fix_tree.c */
+void fix_tree(Compiler *compiler);
 
 #endif
