@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/SVM_code.h"
+#include "../include/DBG.h"
 
 extern OpcodeInfo svm_opcode_info[];
 
@@ -231,10 +232,52 @@ add_functions(Compiler *compiler, SVM_Executable *exe)
 }
 
 static void
+generate_pop_to_identifier(Declaration *decl, OpcodeBuf *ob)
+{
+    generate_code(ob, DROP, decl->variable_index);
+}
+
+// Note: expr type is IDENTIFIER_EXPRESSION
+static void
+generate_pop_to_lvalue(SVM_Executable *exe, Block *block,
+                       Expression *expr, OpcodeBuf *ob)
+{
+    generate_pop_to_identifier(expr->u.identifier, ob);
+}
+
+static void
 generate_assign_statement(SVM_Executable *exe, Block *current_block,
                           AssignStatement *assign_stmt,
                           OpcodeBuf *ob)
 {
+    if (assign_stmt->operator != NORMAL_ASSIGN) {
+        generate_expression(exe, current_block,
+                            assign_stmt->left, ob);
+    }
+    generate_expression(exe, current_block, assign_stmt->operand, ob);
+
+    switch (assign_stmt->operator) {
+    case NORMAL_ASSIGN :
+        break;
+    case ADD_ASSIGN:
+        generate_code(ob, ADD);
+        break;
+    case SUB_ASSIGN:
+        generate_code(ob, SUB);
+        break;
+    case MUL_ASSIGN:
+        generate_code(ob, MUL);
+        break;
+    case DIV_ASSIGN:
+        generate_code(ob, DIV);
+        break;
+    case MOD_ASSIGN:
+        generate_code(ob, MOD);
+        break;
+    default:
+        DBG_assert(0, ("operator..%d\n", assign_stmt->operator));
+    }
+    generate_pop_to_lvalue(exe, current_block, assign_stmt->left, ob);
 }
 
 static void
@@ -263,6 +306,11 @@ generate_initializer(SVM_Executable *exe, Block *current_block,
                      Declaration *decl_stmt,
                      OpcodeBuf *ob)
 {
+    if (decl_stmt->initializer == NULL)
+        return;
+
+    generate_expression(exe, current_block, decl_stmt->initializer, ob);
+    generate_pop_to_identifier(decl_stmt, ob);
 }
 
 static void
@@ -297,8 +345,9 @@ generate_double_expression(SVM_Executable *cf, Expression *expr,
 }
 
 static void
-generate_identifier(char *ident, OpcodeBuf *ob)
+generate_identifier(Declaration *decl, OpcodeBuf *ob)
 {
+    generate_code(ob, PUSHDATA1, decl->variable_index);
 }
 
 static void

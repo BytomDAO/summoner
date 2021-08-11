@@ -63,7 +63,7 @@ typedef struct Expression
         int int_value;
         double double_value;
         char *str_value;
-        char *identifier;
+        struct Declaration *identifier;
         struct BinaryExpression *binary_expression;
         struct Expression *unary_expression;
         struct FuncCallExpression *func_call_expression;
@@ -115,13 +115,24 @@ typedef struct Declaration
     char *name;
     TypeSpecifier *type;
     Expression *initializer;
+    int variable_index;
     bool is_local;
     struct Declaration *next;
 } Declaration;
 
+typedef enum {
+    NORMAL_ASSIGN = 1,
+    ADD_ASSIGN,
+    SUB_ASSIGN,
+    MUL_ASSIGN,
+    DIV_ASSIGN,
+    MOD_ASSIGN
+} AssignmentOperator;
+
 typedef struct AssignStatement
 {
-    char *variable;
+    AssignmentOperator  operator;
+    Expression  *left;
     Expression *operand;
 } AssignStatement;
 
