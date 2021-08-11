@@ -51,6 +51,14 @@ Expression *alloc_unary_expression(ExpressionKind kind, Expression *unaryExpr)
     return expr;
 }
 
+Expression *alloc_type_cast_expression(TypeSpecifier *type, Expression *unaryExpr)
+{
+    Expression *expr = alloc_expression(TYPE_CAST_EXPRESSION);
+    expr->u.unary_expression = unaryExpr;
+    expr->type = type;
+    return expr;
+}
+
 Expression *alloc_binary_expression(ExpressionKind kind, Expression *left, Expression *right)
 {
     Expression *expr = alloc_expression(kind);

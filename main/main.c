@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-    Compiler *compiler = malloc(sizeof(Compiler));
+    Compiler *compiler = create_compiler();
     set_current_compiler(compiler);
 
     extern int yyparse();
@@ -13,10 +13,9 @@ int main(int argc, char *argv[])
     if (yyin == NULL)
     {
         printf("fail to open file:%s\n", argv[1]);
+        exit(1);
     }
-    else
-    {
-        yyparse();
-    }
+
+    yyparse();
     return 0;
 }

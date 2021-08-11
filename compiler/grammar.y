@@ -187,13 +187,14 @@ block:
 
 expr:
            literal
-         | IDENTIFIER            { $$ = alloc_identifier_expression($1); }
-         | expr '+' expr         { $$ = alloc_binary_expression(ADD_EXPRESSION, $1, $3); }
-         | expr '-' expr         { $$ = alloc_binary_expression(SUB_EXPRESSION, $1, $3); }
-         | expr '*' expr         { $$ = alloc_binary_expression(MUL_EXPRESSION, $1, $3); }
-         | expr '/' expr         { $$ = alloc_binary_expression(DIV_EXPRESSION, $1, $3); }
-         | '-' expr %prec MINUS  { $$ = alloc_unary_expression(MINUS_EXPRESSION, $2); }
-         | '(' expr ')'          { $$ = $2; }
+         | IDENTIFIER                  { $$ = alloc_identifier_expression($1); }
+         | expr '+' expr               { $$ = alloc_binary_expression(ADD_EXPRESSION, $1, $3); }
+         | expr '-' expr               { $$ = alloc_binary_expression(SUB_EXPRESSION, $1, $3); }
+         | expr '*' expr               { $$ = alloc_binary_expression(MUL_EXPRESSION, $1, $3); }
+         | expr '/' expr               { $$ = alloc_binary_expression(DIV_EXPRESSION, $1, $3); }
+         | '-' expr %prec MINUS        { $$ = alloc_unary_expression(MINUS_EXPRESSION, $2); }
+         | '(' expr ')'                { $$ = $2; }
+         | type_specifier '(' expr ')' { $$ = alloc_type_cast_expression($1, $3); }
          | bool_expr
          | func_call_expr
          ;
@@ -236,9 +237,3 @@ new_line:
         | new_line '\n'
 
 %%
-
-int yyerror(char const *str) {
-    extern char *yytext;
-    fprintf(stderr, "parse error near %s\n", yytext);
-    return 0;
-}

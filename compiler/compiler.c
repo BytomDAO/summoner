@@ -6,7 +6,13 @@ static Compiler *st_current_compiler;
 Compiler *create_compiler()
 {
     Compiler *compiler = (Compiler *)malloc(sizeof(Compiler));
-    compiler->func_definition_list = (FuncDefinition *)malloc(sizeof(FuncDefinition));
+    compiler->svm_constant_count = 0;
+    compiler->svm_constant = NULL;
+    compiler->function_count = 0;
+    compiler->func_definition_list = NULL;
+    compiler->current_block = NULL;
+    compiler->declaration_list = NULL;
+    compiler->current_line_number = 0;
     return compiler;
 }
 

@@ -1,4 +1,4 @@
-output: main.o lex.o grammar.o create.o string.o compiler.o codegen.o opcode.o
+output: main.o lex.o grammar.o create.o string.o compiler.o codegen.o opcode.o error.o debug.o wchar.o
 	$(CC) -o bin/main $^
 main.o : main/main.c
 	$(CC) -c main/main.c
@@ -18,6 +18,12 @@ lex.o : compiler/lex.l grammar.o
 	$(CC) -c lex.yy.c -o lex.o
 string.o : compiler/string.c
 	$(CC) -c $< -o string.o
+wchar.o: share/wchar.c
+	$(CC) -c $< -o wchar.o
+error.o: compiler/error.c
+	$(CC) -c $< -o error.o
+debug.o: debug/debug.c
+	$(CC) -c $< -o debug.o
 
 clean:
 	rm -f y.tab.*
