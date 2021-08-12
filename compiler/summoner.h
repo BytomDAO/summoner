@@ -50,23 +50,23 @@ typedef enum
 typedef struct TypeSpecifier
 {
     BasicType basic_type;
-    char *identifier;
 } TypeSpecifier;
 
 typedef struct Expression
 {
     TypeSpecifier *type;
     ExpressionKind kind;
+    int line_number;
     union
     {
         bool boolean_value;
         int int_value;
         double double_value;
         char *str_value;
-        char *identifier;
         struct BinaryExpression *binary_expression;
         struct Expression *unary_expression;
         struct FuncCallExpression *func_call_expression;
+        struct IdentifierExpression *identifier;
     } u;
 } Expression;
 
@@ -84,9 +84,35 @@ typedef struct ArgumentList
 
 typedef struct FuncCallExpression
 {
-    char *identifier;
+    Expression *function;
     ArgumentList *argument_list;
 } FuncCallExpression;
+
+typedef enum
+{
+    VARIABLE_IDENTIFIER,
+    BUILT_IN_FUNCTION,
+} IdentifierKind;
+
+typedef struct BuiltinFun
+{
+    const char *name;
+    BasicType *parameters;
+    int parameter_count;
+    BasicType return_type;
+    const char *op_codes;
+} BuiltinFun;
+
+typedef struct IdentifierExpression
+{
+    char *name;
+    IdentifierKind kind;
+    union
+    {
+        struct Declaration *declaration;
+        BuiltinFun *builtin_func;
+    } u;
+} IdentifierExpression;
 
 Expression *alloc_expression(ExpressionKind kind);
 Expression *alloc_int_expression(int value);
@@ -97,7 +123,7 @@ Expression *alloc_identifier_expression(char *identifier);
 Expression *alloc_type_cast_expression(TypeSpecifier *type, Expression *expr);
 Expression *alloc_unary_expression(ExpressionKind kind, Expression *unaryExpr);
 Expression *alloc_binary_expression(ExpressionKind kind, Expression *left, Expression *right);
-Expression *alloc_func_call_expression(char *identifier, ArgumentList *argument_list);
+Expression *alloc_func_call_expression(Expression *identifier_expr, ArgumentList *argument_list);
 ArgumentList *chain_argument_list(ArgumentList *list, Expression *expr);
 
 typedef enum
@@ -116,12 +142,13 @@ typedef struct Declaration
     TypeSpecifier *type;
     Expression *initializer;
     bool is_local;
+    int variable_index;
     struct Declaration *next;
 } Declaration;
 
 typedef struct AssignStatement
 {
-    char *variable;
+    Expression *left;
     Expression *operand;
 } AssignStatement;
 
@@ -148,6 +175,7 @@ typedef struct Block
 {
     StatementList *statement_list;
     struct Block *outer_block;
+    Declaration *declaration_list;
 } Block;
 
 typedef struct Elseif
@@ -166,8 +194,8 @@ typedef struct IfStatement
 } IfStatement;
 
 Statement *alloc_stmt(StatementKind kind);
-Statement *alloc_assign_stmt(char *variable, Expression *operand);
-Statement *alloc_compound_assign_stmt(char *variable, ExpressionKind kind, Expression *operand);
+Statement *alloc_assign_stmt(Expression *identifier_expr, Expression *operand);
+Statement *alloc_compound_assign_stmt(Expression *identifier_expr, ExpressionKind kind, Expression *operand);
 Statement *alloc_block_stmt(Block *block);
 Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block);
 Declaration *alloc_declaration(char *name, TypeSpecifier *type, Expression *initializer);
@@ -182,7 +210,7 @@ Block *open_block();
 Block *close_block(Block *block, StatementList *stmt_list);
 Block *alloc_block(StatementList *list);
 
-TypeSpecifier *alloc_type_specifier(BasicType type, char *identifier);
+TypeSpecifier *alloc_type_specifier(BasicType type);
 
 typedef struct ParameterList
 {
@@ -224,6 +252,8 @@ typedef struct FuncDefinition
     ParameterList *parameters;
     TypeSpecifier *return_type;
     Block *block;
+    int local_variable_count;
+    Declaration **local_variable;
     struct FuncDefinition *next;
 } FuncDefinition;
 
@@ -290,14 +320,15 @@ typedef struct
     SVM_LineNumber *line_number;
 } SVM_CodeBlock;
 
-typedef struct {
-    TypeSpecifier   *type;
-    char            *name;
-    int             parameter_count;
-    SVM_Variable    *parameter;
-    int             local_variable_count;
-    SVM_Variable    *local_variable;
-    SVM_CodeBlock   code_block;
+typedef struct
+{
+    TypeSpecifier *type;
+    char *name;
+    int parameter_count;
+    SVM_Variable *parameter;
+    int local_variable_count;
+    SVM_Variable *local_variable;
+    SVM_CodeBlock code_block;
 } SVM_Function;
 
 // TODO: perfect Compiler
@@ -323,8 +354,8 @@ typedef struct SVM_Executable
     SVM_ConstantPool *constant_pool;
     int global_variable_count;
     SVM_Variable *global_variable;
-    int               function_count;
-    SVM_Function      *function;
+    int function_count;
+    SVM_Function *function;
     int type_specifier_count;
     TypeSpecifier *type_specifier;
     int constant_count;

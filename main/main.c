@@ -17,5 +17,6 @@ int main(int argc, char *argv[])
     }
 
     yyparse();
+    fix_tree(compiler);
     return 0;
 }

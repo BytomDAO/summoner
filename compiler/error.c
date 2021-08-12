@@ -127,8 +127,9 @@ static ErrorDefinition dkc_error_message_format[] = {
     {"在C样式的注释中终止了文件。"},
     {"在字符串字面量中终止了文件。"},
     {"字符字面量中包含了2个以上的字符。"},
-    {"dummy"}
-};
+    {"类型转换不匹配。"},
+    {"函数调用类型不匹配。"},
+    {"dummy"}};
 
 typedef struct
 {

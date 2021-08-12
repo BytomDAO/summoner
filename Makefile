@@ -1,4 +1,4 @@
-output: main.o lex.o grammar.o create.o string.o compiler.o codegen.o opcode.o error.o debug.o wchar.o
+output: main.o lex.o grammar.o create.o string.o compiler.o builtin.o fix_tree.o codegen.o opcode.o error.o debug.o wchar.o
 	$(CC) -o bin/main $^
 main.o : main/main.c
 	$(CC) -c main/main.c
@@ -8,6 +8,10 @@ opcode.o : compiler/opcode.c
 	$(CC) -c $< -o opcode.o
 compiler.o : compiler/compiler.c
 	$(CC) -c $< -o compiler.o
+fix_tree.o : compiler/fix_tree.c
+	$(CC) -c $< -o fix_tree.o
+builtin.o : builtin/builtin.c
+	$(CC) -c $< -o builtin.o
 create.o : compiler/create.c
 	$(CC) -c $< -o create.o
 grammar.o : compiler/grammar.y
