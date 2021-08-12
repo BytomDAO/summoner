@@ -297,7 +297,7 @@ generate_double_expression(SVM_Executable *cf, Expression *expr,
 }
 
 static void
-generate_identifier(char *ident, OpcodeBuf *ob)
+generate_identifier(IdentifierExpression *identifier_expr, OpcodeBuf *ob)
 {
 }
 

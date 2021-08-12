@@ -26,7 +26,10 @@ Expression *alloc_double_expression(double value)
 Expression *alloc_identifier_expression(char *identifier)
 {
     Expression *expr = alloc_expression(IDENTIFIER_EXPRESSION);
-    expr->u.identifier = identifier;
+    IdentifierExpression *identifier_expr = (IdentifierExpression *)malloc(sizeof(IdentifierExpression));
+    identifier_expr->kind = 0;
+    identifier_expr->name = NULL;
+    expr->u.identifier = identifier_expr;
     return expr;
 }
 
@@ -69,11 +72,11 @@ Expression *alloc_binary_expression(ExpressionKind kind, Expression *left, Expre
     return expr;
 }
 
-Expression *alloc_func_call_expression(char *identifier, ArgumentList *argument_list)
+Expression *alloc_func_call_expression(Expression *function, ArgumentList *argument_list)
 {
     Expression *expr = alloc_expression(FUNC_CALL_EXPRESSION);
     FuncCallExpression *func_call_e = (FuncCallExpression *)malloc(sizeof(FuncCallExpression));
-    func_call_e->identifier = identifier;
+    func_call_e->function = function;
     func_call_e->argument_list = argument_list;
     expr->u.func_call_expression = func_call_e;
     return expr;
@@ -101,19 +104,19 @@ Statement *alloc_stmt(StatementKind kind)
     return stmt;
 }
 
-Statement *alloc_assign_stmt(char *variable, Expression *operand)
+Statement *alloc_assign_stmt(Expression *identifier_expr, Expression *operand)
 {
     Statement *stmt = alloc_stmt(ASSIGN_STATEMENT);
     AssignStatement *assign_s = (AssignStatement *)malloc(sizeof(AssignStatement));
-    assign_s->variable = variable;
+    assign_s->left = identifier_expr;
     assign_s->operand = operand;
     stmt->u.assign_s = assign_s;
     return stmt;
 }
 
-Statement *alloc_compound_assign_stmt(char *variable, ExpressionKind kind, Expression *operand)
+Statement *alloc_compound_assign_stmt(Expression *identifier_expr, ExpressionKind kind, Expression *operand)
 {
-    return alloc_assign_stmt(variable, alloc_binary_expression(kind, alloc_identifier_expression(variable), operand));
+    return alloc_assign_stmt(identifier_expr, alloc_binary_expression(kind, identifier_expr, operand));
 }
 
 Statement *alloc_if_stmt(Expression *condition, Block *then_block, Elseif *elseif_list, Block *else_block)
@@ -238,11 +241,10 @@ Block *alloc_block(StatementList *list)
     return block;
 }
 
-TypeSpecifier *alloc_type_specifier(BasicType type, char *identifier)
+TypeSpecifier *alloc_type_specifier(BasicType type)
 {
     TypeSpecifier *type_s = (TypeSpecifier *)malloc(sizeof(TypeSpecifier));
     type_s->basic_type = type;
-    type_s->identifier = identifier;
     return type_s;
 }
 
@@ -282,6 +284,8 @@ Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpe
     func_d->parameters = parameters;
     func_d->return_type = return_type;
     func_d->block = block;
+    func_d->local_variable_count = 0;
+    func_d->local_variable = NULL;
     func_d->next = NULL;
 
     Definition *definition = alloc_definition(FUNC_DEFINITION);

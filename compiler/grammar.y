@@ -32,7 +32,7 @@ int yyerror(const char *s);
 %token VAR CONST FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
 %token BOOL_T INT_T DOUBLE_T STRING_T ASSET_T HASH_T AMOUNT_T PUBKEY_T SIG_T HEX_T
 
-%type <expression> expr bool_expr func_call_expr literal
+%type <expression> expr bool_expr func_call_expr identifier_expr literal
 %type <declaration> variable_declaration variable_declaration_list
 %type <statement> stmt if_stmt return_stmt declaration_stmt assign_stmt compound_assign_stmt variable_declaration_stmt const_stmt
 %type <statement_list> stmt_list
@@ -109,15 +109,15 @@ stmt:
      ;
 
 assign_stmt:
-             IDENTIFIER '=' expr  { $$ = alloc_assign_stmt($1, $3); }
+             identifier_expr '=' expr  { $$ = alloc_assign_stmt($1, $3); }
            | compound_assign_stmt 
            ;
 
 compound_assign_stmt:
-                      IDENTIFIER ADD_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, ADD_EXPRESSION, $3); }
-                    | IDENTIFIER SUB_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, SUB_EXPRESSION, $3); }
-                    | IDENTIFIER MUL_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, MUL_EXPRESSION, $3); }
-                    | IDENTIFIER DIV_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, DIV_EXPRESSION, $3); }
+                      identifier_expr ADD_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, ADD_EXPRESSION, $3); }
+                    | identifier_expr SUB_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, SUB_EXPRESSION, $3); }
+                    | identifier_expr MUL_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, MUL_EXPRESSION, $3); }
+                    | identifier_expr DIV_ASSIGN expr { $$ = alloc_compound_assign_stmt($1, DIV_EXPRESSION, $3); }
                     ;
 
 const_stmt:
@@ -147,16 +147,16 @@ variable_declaration:
                     ;
 
 type_specifier:
-                BOOL_T   { $$ = alloc_type_specifier(BOOLEAN_TYPE, NULL); }
-              | INT_T    { $$ = alloc_type_specifier(INT_TYPE, NULL); }
-              | DOUBLE_T { $$ = alloc_type_specifier(DOUBLE_TYPE, NULL); }
-              | STRING_T { $$ = alloc_type_specifier(STRING_TYPE, NULL); }
-              | ASSET_T  { $$ = alloc_type_specifier(ASSET_TYPE, NULL); }
-              | HASH_T   { $$ = alloc_type_specifier(HASH_TYPE, NULL); }
-              | AMOUNT_T { $$ = alloc_type_specifier(AMOUNT_TYPE, NULL); }
-              | PUBKEY_T { $$ = alloc_type_specifier(PUBKEY_TYPE, NULL); }
-              | SIG_T    { $$ = alloc_type_specifier(SIG_TYPE, NULL); }
-              | HEX_T    { $$ = alloc_type_specifier(HEX_TYPE, NULL); }
+                BOOL_T   { $$ = alloc_type_specifier(BOOLEAN_TYPE); }
+              | INT_T    { $$ = alloc_type_specifier(INT_TYPE); }
+              | DOUBLE_T { $$ = alloc_type_specifier(DOUBLE_TYPE); }
+              | STRING_T { $$ = alloc_type_specifier(STRING_TYPE); }
+              | ASSET_T  { $$ = alloc_type_specifier(ASSET_TYPE); }
+              | HASH_T   { $$ = alloc_type_specifier(HASH_TYPE); }
+              | AMOUNT_T { $$ = alloc_type_specifier(AMOUNT_TYPE); }
+              | PUBKEY_T { $$ = alloc_type_specifier(PUBKEY_TYPE); }
+              | SIG_T    { $$ = alloc_type_specifier(SIG_TYPE); }
+              | HEX_T    { $$ = alloc_type_specifier(HEX_TYPE); }
               ;
 
 return_stmt:
@@ -187,7 +187,7 @@ block:
 
 expr:
            literal
-         | IDENTIFIER                  { $$ = alloc_identifier_expression($1); }
+         | identifier_expr
          | expr '+' expr               { $$ = alloc_binary_expression(ADD_EXPRESSION, $1, $3); }
          | expr '-' expr               { $$ = alloc_binary_expression(SUB_EXPRESSION, $1, $3); }
          | expr '*' expr               { $$ = alloc_binary_expression(MUL_EXPRESSION, $1, $3); }
@@ -219,9 +219,13 @@ bool_expr:
            ;
 
 func_call_expr:
-                IDENTIFIER '(' ')'               { $$ = alloc_func_call_expression($1, NULL); }
-              | IDENTIFIER '(' argument_list ')' { $$ = alloc_func_call_expression($1, $3); }
+                identifier_expr '(' ')'               { $$ = alloc_func_call_expression($1, NULL); }
+              | identifier_expr '(' argument_list ')' { $$ = alloc_func_call_expression($1, $3); }
               ;
+
+identifier_expr:
+                 IDENTIFIER { $$ = alloc_identifier_expression($1); }
+               ;
 
 argument_list:
                expr                   { $$ = chain_argument_list(NULL, $1); }
