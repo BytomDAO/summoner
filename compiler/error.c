@@ -129,6 +129,8 @@ static ErrorDefinition dkc_error_message_format[] = {
     {"字符字面量中包含了2个以上的字符。"},
     {"类型转换不匹配。"},
     {"函数调用类型不匹配。"},
+    {"变量声明类型与表达式类型不匹配。"},
+    {"返回值类型不匹配."},
     {"dummy"}};
 
 typedef struct

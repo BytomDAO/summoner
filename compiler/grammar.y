@@ -18,10 +18,9 @@ int yyerror(const char *s);
     struct StatementList *statement_list;
     struct Block *block;
     struct Elseif *elseif;
+    struct FuncDefinition *func_definition;
     struct TypeSpecifier *type_specifier;
     struct ParameterList *parameter_list;
-    struct Definition *definition;
-    struct DefinitionList *definition_list;
     struct ArgumentList *argument_list;
 }
 
@@ -38,10 +37,9 @@ int yyerror(const char *s);
 %type <statement_list> stmt_list
 %type <block> block
 %type <elseif> elseif elseif_list
+%type <func_definition> func_definition
 %type <type_specifier> type_specifier
 %type <parameter_list> parameter_list paramter
-%type <definition> definition func_definition variable_definition const_definition
-%type <definition_list> definition_list
 %type <argument_list> argument_list
 
 %nonassoc '=' ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN DECL_ASSIGN
@@ -55,20 +53,11 @@ int yyerror(const char *s);
 
 %%
 
-translation_unit:
-                  new_line_option definition_list new_line_option { add_definitions_to_compiler($2); }
-                ;
-
-definition_list:
-                  definition                          { $$ = alloc_definition_list($1); }
-                | definition_list new_line definition { $$ = chain_definition_list($1, $3); }
-                ;
-
-definition:
-            func_definition
-          | const_definition          
-          | variable_definition
-          ;
+definition_or_stmt:
+                    func_definition                   { add_func_definition_to_compiler($1); }
+                  | const_stmt                        { add_stmt_to_compiler($1); }
+                  | variable_declaration_stmt         { add_stmt_to_compiler($1); }
+                  ;
 
 func_definition:
                  FUNCTION IDENTIFIER '(' parameter_list ')' type_specifier block { $$ = alloc_func_definition($2, $4, $6, $7); }
@@ -76,14 +65,6 @@ func_definition:
                | FUNCTION IDENTIFIER '(' parameter_list ')' block                { $$ = alloc_func_definition($2, $4, NULL, $6); }
                | FUNCTION IDENTIFIER '(' ')' block                               { $$ = alloc_func_definition($2, NULL, NULL, $5); }
                ;
-
-variable_definition:
-                     variable_declaration_stmt { $$ = alloc_declaration_definition($1); }
-                   ;
-
-const_definition:
-                  const_stmt { $$ = alloc_declaration_definition($1); }
-                ;
 
 parameter_list:
                  paramter

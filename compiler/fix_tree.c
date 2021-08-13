@@ -8,9 +8,9 @@
 
 extern BuiltinFun *search_builtin_function(char *name);
 static Expression *fix_expression(Block *current_block, Expression *expr);
+static void fix_statement_list(Block *current_block, StatementList *list, FuncDefinition *fd);
 
-Declaration *
-search_declaration(char *identifier, Block *block)
+Declaration *search_declaration(char *identifier, Block *block)
 {
     Block *b_pos;
     Declaration *d_pos;
@@ -648,8 +648,9 @@ fix_expression(Block *current_block, Expression *expr)
     return expr;
 }
 
-static void add_local_variable(FuncDefinition *fd, Declaration *decl,
-                               bool is_parameter)
+static void
+add_local_variable(FuncDefinition *fd, Declaration *decl,
+                   bool is_parameter)
 {
     fd->local_variable = realloc(fd->local_variable,
                                  sizeof(Declaration *) * (fd->local_variable_count + 1));
@@ -686,29 +687,172 @@ add_declaration(Block *current_block, Declaration *decl,
     }
 }
 
-static void fix_declaration_stmt(Declaration *decl, Block *current_block)
+static void
+fix_if_statement(Block *current_block, IfStatement *if_s, FuncDefinition *fd)
 {
-    add_declaration(current_block, decl, NULL, 0, false);
+    if_s->condition = fix_expression(current_block, if_s->condition);
+    if (if_s->condition->type->basic_type != BOOLEAN_TYPE)
+    {
+        compile_error(if_s->condition->line_number,
+                      IF_CONDITION_NOT_BOOLEAN_ERR,
+                      MESSAGE_ARGUMENT_END);
+    }
+
+    fix_statement_list(if_s->then_block, if_s->then_block->statement_list, fd);
+
+    for (Elseif *pos = if_s->elseif_list; pos; pos = pos->next)
+    {
+        pos->condition = fix_expression(current_block, pos->condition);
+        if (pos->block)
+        {
+            fix_statement_list(pos->block, pos->block->statement_list, fd);
+        }
+    }
+    if (if_s->else_block)
+    {
+        fix_statement_list(if_s->else_block, if_s->else_block->statement_list, fd);
+    }
+}
+
+static void
+fix_return_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
+{
+    Expression *return_value = fix_expression(current_block, statement->u.expr_s);
+    if (fd->return_type->basic_type == VOID_TYPE && return_value != NULL)
+    {
+        compile_error(statement->line_number,
+                      RETURN_IN_VOID_FUNCTION_ERR,
+                      MESSAGE_ARGUMENT_END);
+    }
+    if (fd->return_type->basic_type != VOID_TYPE)
+    {
+        if (return_value == NULL || return_value->type->basic_type != fd->return_type->basic_type)
+            compile_error(statement->line_number,
+                          RETURN_TYPE_MISMATCH_ERR,
+                          MESSAGE_ARGUMENT_END);
+    }
+
+    statement->u.expr_s = return_value;
+}
+
+static void
+fix_declaration_stmt(Statement *stmt, Block *current_block, FuncDefinition *fd)
+{
+    Declaration *decl = stmt->u.decl_s;
+    add_declaration(current_block, decl, fd, stmt->line_number, false);
     if (decl->initializer)
     {
         decl->initializer = fix_expression(current_block, decl->initializer);
-        // decl->initializer = create_assign_cast(decl->initializer, decl->type);
+        if (!decl->type)
+        {
+            decl->type = decl->initializer->type;
+        }
+        else if (decl->initializer->kind == INT_EXPRESSION && decl->type->basic_type == DOUBLE_TYPE)
+        {
+            decl->initializer->kind = DOUBLE_EXPRESSION;
+            decl->initializer->type->basic_type = DOUBLE_TYPE;
+            decl->initializer->u.double_value = decl->initializer->u.int_value;
+        }
+        else if (decl->initializer->type->basic_type != decl->type->basic_type)
+        {
+            compile_error(stmt->line_number,
+                          DECLARATION_TYPE_MISMATCH_ERR,
+                          MESSAGE_ARGUMENT_END);
+        }
+    }
+    else
+    {
+        switch (decl->type->basic_type)
+        {
+        case AMOUNT_TYPE:
+        case INT_TYPE:
+            decl->initializer = alloc_int_expression(0);
+            break;
+        case DOUBLE_TYPE:
+            decl->initializer = alloc_double_expression(0);
+            break;
+        case STRING_TYPE:
+        case ASSET_TYPE:
+        case HASH_TYPE:
+        case PUBKEY_TYPE:
+        case SIG_TYPE:
+        case HEX_TYPE:
+            decl->initializer = alloc_string_expression("");
+            break;
+        default:
+            DBG_assert(0, ("bad case. type..%d\n", decl->type->basic_type));
+        }
+    }
+}
+
+static void
+fix_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
+{
+    switch (statement->kind)
+    {
+    case IF_STATEMENT:
+        fix_if_statement(current_block, statement->u.if_s, fd);
+        break;
+    case RETURN_STATEMENT:
+        fix_return_statement(current_block, statement, fd);
+        break;
+    case DECLARATION_STATEMENT:
+        fix_declaration_stmt(statement, current_block, fd);
+        break;
+    default:
+        DBG_assert(0, ("bad case. kind..%d\n", statement->kind));
+    }
+}
+
+static void
+fix_statement_list(Block *current_block, StatementList *list, FuncDefinition *fd)
+{
+    StatementList *pos;
+
+    for (pos = list; pos; pos = pos->next)
+    {
+        fix_statement(current_block, pos->statement, fd);
+    }
+}
+
+static void
+add_parameter_as_declaration(FuncDefinition *fd)
+{
+    Declaration *decl;
+    ParameterList *param;
+
+    for (param = fd->parameters; param; param = param->next)
+    {
+        if (search_declaration(param->name, fd->block))
+        {
+            compile_error(param->line_number,
+                          PARAMETER_MULTIPLE_DEFINE_ERR,
+                          STRING_MESSAGE_ARGUMENT, "name", param->name,
+                          MESSAGE_ARGUMENT_END);
+        }
+
+        decl = alloc_declaration(param->name, param->type, NULL);
+        if (fd == NULL || fd->block)
+        {
+            add_declaration(fd->block, decl, fd, param->line_number, true);
+        }
     }
 }
 
 static void fix_function(FuncDefinition *fd)
 {
+    add_parameter_as_declaration(fd);
+    if (fd->block)
+    {
+        fix_statement_list(fd->block, fd->block->statement_list, fd);
+    }
 }
 
 void fix_tree(Compiler *compiler)
 {
     FuncDefinition *func_pos;
-    Declaration *decl_pos;
 
-    for (decl_pos = compiler->declaration_list; decl_pos; decl_pos = decl_pos->next)
-    {
-        fix_declaration_stmt(decl_pos, NULL);
-    }
+    fix_statement_list(NULL, compiler->stmt_list, NULL);
 
     for (func_pos = compiler->func_definition_list; func_pos; func_pos = func_pos->next)
     {
