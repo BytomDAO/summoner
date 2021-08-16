@@ -270,27 +270,21 @@ ParameterList *chain_parameter(ParameterList *list, ParameterList *parameter)
     return list;
 }
 
-Definition *alloc_definition(DefinitionKind kind)
-{
-    Definition *definition = (Definition *)malloc(sizeof(Definition));
-    definition->kind = kind;
-    return definition;
-}
-
-Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block)
+FuncDefinition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block)
 {
     FuncDefinition *func_d = (FuncDefinition *)malloc(sizeof(FuncDefinition));
     func_d->name = name;
     func_d->parameters = parameters;
     func_d->return_type = return_type;
+    if (!return_type)
+    {
+        func_d->return_type = alloc_type_specifier(VOID_TYPE);
+    }
     func_d->block = block;
     func_d->local_variable_count = 0;
     func_d->local_variable = NULL;
     func_d->next = NULL;
-
-    Definition *definition = alloc_definition(FUNC_DEFINITION);
-    definition->u.func_d = func_d;
-    return definition;
+    return func_d;
 }
 
 FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition *next)
@@ -305,35 +299,6 @@ FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition 
         ;
 
     pos->next = next;
-    return list;
-}
-
-Definition *alloc_declaration_definition(Statement *declaration_stmt)
-{
-    Definition *definition = alloc_definition(DECLARATION_DEFINITION);
-    definition->u.declaration = declaration_stmt->u.decl_s;
-    return definition;
-}
-
-DefinitionList *alloc_definition_list(Definition *definition)
-{
-    DefinitionList *list = (DefinitionList *)malloc(sizeof(DefinitionList));
-    list->definition = definition;
-    list->next = NULL;
-    return list;
-}
-
-DefinitionList *chain_definition_list(DefinitionList *list, Definition *definition)
-{
-    if (list == NULL)
-    {
-        list->next = alloc_definition_list(definition);
-        return list;
-    }
-    DefinitionList *pos;
-    for (pos = list; pos->next; pos = pos->next)
-        ;
-    pos->next = alloc_definition_list(definition);
     return list;
 }
 

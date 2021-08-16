@@ -155,6 +155,7 @@ typedef struct AssignStatement
 typedef struct Statement
 {
     StatementKind kind;
+    int line_number;
     union
     {
         struct AssignStatement *assign_s;
@@ -216,6 +217,7 @@ typedef struct ParameterList
 {
     char *name;
     TypeSpecifier *type;
+    int line_number;
     struct ParameterList *next;
 } ParameterList;
 
@@ -230,22 +232,6 @@ typedef enum
     STRUCT_DEFINITION,
 } DefinitionKind;
 
-typedef struct DefinitionList
-{
-    struct Definition *definition;
-    struct DefinitionList *next;
-} DefinitionList;
-
-typedef struct Definition
-{
-    DefinitionKind kind;
-    union
-    {
-        struct FuncDefinition *func_d;
-        struct Declaration *declaration;
-    } u;
-} Definition;
-
 typedef struct FuncDefinition
 {
     char *name;
@@ -257,12 +243,9 @@ typedef struct FuncDefinition
     struct FuncDefinition *next;
 } FuncDefinition;
 
-Definition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block);
+FuncDefinition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block);
 FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition *next);
-Definition *alloc_declaration_definition(Statement *declaration_stmt);
 Declaration *chain_declaration_list(Declaration *list, Declaration *declaration);
-DefinitionList *alloc_definition_list(Definition *definition);
-DefinitionList *chain_definition_list(DefinitionList *list, Definition *definition);
 
 typedef wchar_t SVM_Char;
 typedef unsigned char SVM_Byte;
@@ -338,6 +321,7 @@ typedef struct Compiler
     SVM_Constant *svm_constant;
     int function_count;
     FuncDefinition *func_definition_list;
+    StatementList *stmt_list;
     Block *current_block;
     Declaration *declaration_list;
     int current_line_number;
@@ -346,7 +330,8 @@ typedef struct Compiler
 Compiler *create_compiler();
 Compiler *get_current_compiler();
 void set_current_compiler(Compiler *compiler);
-void add_definitions_to_compiler(DefinitionList *definitions);
+void add_stmt_to_compiler(Statement *stmt);
+void add_func_definition_to_compiler(FuncDefinition *func_definition);
 
 typedef struct SVM_Executable
 {

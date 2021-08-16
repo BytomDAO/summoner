@@ -209,16 +209,17 @@ ExprValue Interpreter::eval_expression(Expression *expr)
     case FUNC_CALL_EXPRESSION:
     {
         FuncCallExpression *func_call_expr = expr->u.func_call_expression;
-        FuncDefinition *func_d = this->find_func_definition(func_call_expr->identifier);
+        const char *func_identifier = func_call_expr->function->u.identifier->name;
+        FuncDefinition *func_d = this->find_func_definition(func_identifier);
         if (func_d == nullptr)
         {
-            cout << "func \"" << func_call_expr->identifier << "\" is undefined" << endl;
+            cout << "func \"" << func_identifier << "\" is undefined" << endl;
             exit(1);
         }
         return *(this->eval_func(func_d, func_call_expr->argument_list));
     }
     case IDENTIFIER_EXPRESSION:
-        return this->current_scope->find_identifier(expr->u.identifier)->get_value();
+        return this->current_scope->find_identifier(expr->u.identifier->name)->get_value();
     default:
         printf("invalid expression type when eval expression:%d\n", expr->kind);
         exit(1);
@@ -308,10 +309,11 @@ StmtResult Interpreter::eval_stmt(Statement *stmt)
     case ASSIGN_STATEMENT:
     {
         AssignStatement *assign_s = stmt->u.assign_s;
-        Identifier *identifier = this->current_scope->find_identifier(assign_s->variable);
+        char *identifier_name = assign_s->left->u.identifier->name;
+        Identifier *identifier = this->current_scope->find_identifier(identifier_name);
         if (identifier == nullptr)
         {
-            cout << "\"" << assign_s->variable << "\" is undefined" << endl;
+            cout << "\"" << identifier_name << "\" is undefined" << endl;
             exit(1);
         }
         if (identifier->get_is_const())

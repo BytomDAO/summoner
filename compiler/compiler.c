@@ -26,22 +26,14 @@ void set_current_compiler(Compiler *compiler)
     st_current_compiler = compiler;
 }
 
-void add_definitions_to_compiler(DefinitionList *definitions)
+void add_func_definition_to_compiler(FuncDefinition *func_definition)
 {
     Compiler *compiler = get_current_compiler();
-    for (DefinitionList *pos = definitions; pos != NULL; pos = pos->next)
-    {
-        switch (pos->definition->kind)
-        {
-        case FUNC_DEFINITION:
-            compiler->func_definition_list = chain_func_definition_list(
-                compiler->func_definition_list, pos->definition->u.func_d);
-            break;
-        case DECLARATION_DEFINITION:
-            compiler->declaration_list = chain_declaration_list(
-                compiler->declaration_list, pos->definition->u.declaration);
-        default:
-            break;
-        }
-    }
+    compiler->func_definition_list = chain_func_definition_list(compiler->func_definition_list, func_definition);
+}
+
+void add_stmt_to_compiler(Statement *stmt)
+{
+    Compiler *compiler = get_current_compiler();
+    compiler->stmt_list = chain_stmt_list(compiler->stmt_list, stmt);
 }
