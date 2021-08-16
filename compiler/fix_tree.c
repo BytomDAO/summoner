@@ -602,6 +602,28 @@ fix_function_call_expression(Block *current_block, Expression *expr)
     return expr;
 }
 
+static Expression *init_expression(BasicType basic_type)
+{
+    switch (basic_type)
+    {
+    case AMOUNT_TYPE:
+    case INT_TYPE:
+        return alloc_int_expression(0);
+    case DOUBLE_TYPE:
+        return alloc_double_expression(0);
+    case STRING_TYPE:
+    case ASSET_TYPE:
+    case HASH_TYPE:
+    case PUBKEY_TYPE:
+    case SIG_TYPE:
+    case HEX_TYPE:
+        return alloc_string_expression("");
+    default:
+        DBG_assert(0, ("bad case. type..%d\n", basic_type));
+    }
+    return NULL;
+}
+
 static Expression *
 fix_expression(Block *current_block, Expression *expr)
 {
@@ -775,26 +797,7 @@ fix_declaration_stmt(Statement *stmt, Block *current_block, FuncDefinition *fd)
     }
     else
     {
-        switch (decl->type->basic_type)
-        {
-        case AMOUNT_TYPE:
-        case INT_TYPE:
-            decl->initializer = alloc_int_expression(0);
-            break;
-        case DOUBLE_TYPE:
-            decl->initializer = alloc_double_expression(0);
-            break;
-        case STRING_TYPE:
-        case ASSET_TYPE:
-        case HASH_TYPE:
-        case PUBKEY_TYPE:
-        case SIG_TYPE:
-        case HEX_TYPE:
-            decl->initializer = alloc_string_expression("");
-            break;
-        default:
-            DBG_assert(0, ("bad case. type..%d\n", decl->type->basic_type));
-        }
+        decl->initializer = init_expression(decl->type->basic_type);
     }
 }
 
