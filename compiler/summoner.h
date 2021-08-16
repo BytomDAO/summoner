@@ -356,4 +356,11 @@ char *close_string_literal(void);
 /** fix_tree.c */
 void fix_tree(Compiler *compiler);
 
+/** codegen.c */
+SVM_Executable *smc_code_gen(Compiler *compiler);
+
+/* disassemble.c */
+int svm_dump_instruction(FILE *fp, SVM_Byte *code, int index);
+void svm_disassemble(SVM_Executable *exe);
+
 #endif

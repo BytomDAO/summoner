@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <wchar.h>
 #include <stdbool.h>
+#include "../compiler/summoner.h"
 
 /* wchar.c */
 typedef struct
@@ -28,6 +29,10 @@ char dvm_wctochar(wchar_t src);
 int dvm_print_wcs(FILE *fp, wchar_t *str);
 int dvm_print_wcs_ln(FILE *fp, wchar_t *str);
 bool dvm_iswdigit(wchar_t ch);
+
+/* disassemble.c */
+int svm_dump_instruction(FILE *fp, SVM_Byte *code, int index);
+void svm_disassemble(SVM_Executable *exe);
 
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
