@@ -4,6 +4,8 @@
 
 int main(int argc, char *argv[])
 {
+    SVM_Executable *exe;
+
     Compiler *compiler = create_compiler();
     set_current_compiler(compiler);
 
@@ -18,5 +20,8 @@ int main(int argc, char *argv[])
 
     yyparse();
     fix_tree(compiler);
+    exe = smc_code_gen(compiler);
+    svm_disassemble(exe);
+
     return 0;
 }
