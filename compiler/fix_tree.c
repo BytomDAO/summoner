@@ -10,6 +10,19 @@ extern BuiltinFun *search_builtin_function(char *name);
 static Expression *fix_expression(Block *current_block, Expression *expr);
 static void fix_statement_list(Block *current_block, StatementList *list, FuncDefinition *fd);
 
+Declaration *search_declaration_in_current_block(char *identifier, Block *block)
+{
+    Declaration *d_pos;
+    for (d_pos = block->declaration_list; d_pos; d_pos = d_pos->next)
+    {
+        if (!strcmp(identifier, d_pos->name))
+        {
+            return d_pos;
+        }
+    }
+    return NULL;
+}
+
 Declaration *search_declaration(char *identifier, Block *block)
 {
     Block *b_pos;
@@ -664,7 +677,7 @@ add_declaration(Block *current_block, Declaration *decl,
                 FuncDefinition *fd, int line_number,
                 bool is_parameter)
 {
-    if (search_declaration(decl->name, current_block))
+    if (search_declaration_in_current_block(decl->name, current_block))
     {
         compile_error(line_number,
                       VARIABLE_MULTIPLE_DEFINE_ERR,
@@ -823,16 +836,8 @@ add_parameter_as_declaration(FuncDefinition *fd)
 
     for (param = fd->parameters; param; param = param->next)
     {
-        if (search_declaration(param->name, fd->block))
-        {
-            compile_error(param->line_number,
-                          PARAMETER_MULTIPLE_DEFINE_ERR,
-                          STRING_MESSAGE_ARGUMENT, "name", param->name,
-                          MESSAGE_ARGUMENT_END);
-        }
-
         decl = alloc_declaration(param->name, param->type, NULL);
-        if (fd == NULL || fd->block)
+        if (fd->block)
         {
             add_declaration(fd->block, decl, fd, param->line_number, true);
         }
