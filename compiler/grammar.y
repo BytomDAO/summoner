@@ -67,7 +67,7 @@ definition_list:
                 ;
 
 definition:
-            func_definition                   { $$ = alloc_definition(); add_func_definition_to_compiler($1); }
+            func_definition                    { $$ = alloc_definition(); add_func_definition_to_compiler($1); }
           | const_stmt                        { $$ = alloc_definition(); add_stmt_to_compiler($1); }
           | variable_declaration_stmt         { $$ = alloc_definition(); add_stmt_to_compiler($1); }
           ;
@@ -89,9 +89,9 @@ parameter:
          ;
 
 stmt_list:
-          stmt                    {$$ = chain_stmt_list(NULL, $1); }
-        | stmt_list new_line stmt {$$ = chain_stmt_list($1, $3); }
-        ;
+            stmt                    {$$ = chain_stmt_list(NULL, $1); }
+         |  stmt_list new_line stmt {$$ = chain_stmt_list($1, $3); }
+         ;
 
 stmt:
        expr                { $$ = alloc_expression_stmt($1); }
