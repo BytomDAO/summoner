@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "y.tab.h"
-#include "compiler/summoner.h"
+#include "summoner.h"
 
 void lex_err(char *str) {
     fprintf(stderr, "lexical error:%s\n", str);

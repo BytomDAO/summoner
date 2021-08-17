@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "compiler/summoner.h"
+#include "summoner.h"
 
 int yylex();
 int yyerror(const char *s);
