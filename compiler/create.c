@@ -302,6 +302,16 @@ FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition 
     return list;
 }
 
+Definition *alloc_definition()
+{
+    return (Definition *) malloc(sizeof(Definition));
+}
+
+DefinitionList *alloc_definition_list()
+{
+    return (DefinitionList *) malloc(sizeof(DefinitionList));
+}
+
 Declaration *chain_declaration_list(Declaration *list, Declaration *next)
 {
     if (list == NULL)
