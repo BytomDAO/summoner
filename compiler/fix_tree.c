@@ -574,7 +574,7 @@ fix_function_call_expression(Block *current_block, Expression *expr)
     Expression *func_expr = fix_expression(current_block, expr->u.func_call_expression->function);
     expr->u.func_call_expression->function = func_expr;
 
-    BuiltinFun *builtin_fun = expr->u.identifier->u.builtin_func;
+    BuiltinFun *builtin_fun = func_expr->u.identifier->u.builtin_func;
     if (builtin_fun == NULL)
     {
         compile_error(expr->line_number,

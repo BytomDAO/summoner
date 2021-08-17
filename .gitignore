@@ -55,7 +55,8 @@ y.tab.h
 y.tab.c
 lex.yy.c
 bin/*
+build/*
+cmake-build-debug/*
 
 .vscode/*
 .idea/*
-cmake-build-debug/*

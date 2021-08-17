@@ -14,7 +14,7 @@ void open_string_literal(void)
     st_string_literal_buffer_size = 0;
 }
 
-void add_string_literal(int letter)
+void add_string_literal(char letter)
 {
     if (st_string_literal_buffer_size == st_string_literal_buffer_alloc_size)
     {
