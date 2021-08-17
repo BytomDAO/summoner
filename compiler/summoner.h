@@ -247,6 +247,12 @@ FuncDefinition *alloc_func_definition(char *name, ParameterList *parameters, Typ
 FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition *next);
 Declaration *chain_declaration_list(Declaration *list, Declaration *declaration);
 
+typedef struct Definition {} Definition;
+typedef struct DefinitionList {} DefinitionList;
+
+Definition *alloc_definition();
+DefinitionList *alloc_definition_list();
+
 typedef wchar_t SVM_Char;
 typedef unsigned char SVM_Byte;
 

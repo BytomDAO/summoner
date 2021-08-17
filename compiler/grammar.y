@@ -19,6 +19,8 @@ int yyerror(const char *s);
     struct Block *block;
     struct Elseif *elseif;
     struct FuncDefinition *func_definition;
+    struct Definition *definition;
+    struct DefinitionList *definition_list;
     struct TypeSpecifier *type_specifier;
     struct ParameterList *parameter_list;
     struct ArgumentList *argument_list;
@@ -38,8 +40,10 @@ int yyerror(const char *s);
 %type <block> block
 %type <elseif> elseif elseif_list
 %type <func_definition> func_definition
+%type <definition> definition
+%type <definition_list> definition_list
 %type <type_specifier> type_specifier
-%type <parameter_list> parameter_list paramter
+%type <parameter_list> parameter_list parameter
 %type <argument_list> argument_list
 
 %nonassoc '=' ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN DECL_ASSIGN
@@ -53,11 +57,20 @@ int yyerror(const char *s);
 
 %%
 
-definition_or_stmt:
-                    func_definition                   { add_func_definition_to_compiler($1); }
-                  | const_stmt                        { add_stmt_to_compiler($1); }
-                  | variable_declaration_stmt         { add_stmt_to_compiler($1); }
-                  ;
+translation_unit:
+                  new_line_option definition_list new_line_option
+                ;
+
+definition_list:
+                  definition                          { $$ = alloc_definition_list(); }
+                | definition_list new_line definition
+                ;
+
+definition:
+            func_definition                   { $$ = alloc_definition(); add_func_definition_to_compiler($1); }
+          | const_stmt                        { $$ = alloc_definition(); add_stmt_to_compiler($1); }
+          | variable_declaration_stmt         { $$ = alloc_definition(); add_stmt_to_compiler($1); }
+          ;
 
 func_definition:
                  FUNCTION IDENTIFIER '(' parameter_list ')' type_specifier block { $$ = alloc_func_definition($2, $4, $6, $7); }
@@ -67,12 +80,12 @@ func_definition:
                ;
 
 parameter_list:
-                 paramter
-               | parameter_list ',' paramter { $$ = chain_parameter($1, $3); }
+                 parameter
+               | parameter_list ',' parameter { $$ = chain_parameter($1, $3); }
                ;
 
-paramter:
-         IDENTIFIER type_specifier { $$ = alloc_parameter($2, $1); }
+parameter:
+          IDENTIFIER type_specifier { $$ = alloc_parameter($2, $1); }
          ;
 
 stmt_list:
