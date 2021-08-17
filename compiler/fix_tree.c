@@ -4,7 +4,6 @@
 #include "summoner.h"
 #include "error.h"
 #include "../include/DBG.h"
-#include "../include/share.h"
 
 extern BuiltinFun *search_builtin_function(char *name);
 static Expression *fix_expression(Block *current_block, Expression *expr);
@@ -12,6 +11,11 @@ static void fix_statement_list(Block *current_block, StatementList *list, FuncDe
 
 Declaration *search_declaration_in_current_block(char *identifier, Block *block)
 {
+    if (!block)
+    {
+        return NULL;
+    }
+
     Declaration *d_pos;
     for (d_pos = block->declaration_list; d_pos; d_pos = d_pos->next)
     {
@@ -56,7 +60,6 @@ fix_identifier_expression(Block *current_block, Expression *expr)
 {
     Declaration *decl;
     BuiltinFun *builtin_func;
-    Compiler *compiler = get_current_compiler();
 
     decl = search_declaration(expr->u.identifier->name, current_block);
     if (decl)
@@ -296,7 +299,7 @@ eval_compare_expression_int(Expression *expr, int left, int right)
 }
 
 static Expression *
-eval_compare_expression_double(Expression *expr, int left, int right)
+eval_compare_expression_double(Expression *expr, double left, double right)
 {
     if (expr->kind == EQ_EXPRESSION)
     {
@@ -531,7 +534,7 @@ fix_type_cast_expression(Block *current_block, Expression *expr)
     else
     {
         compile_error(expr->line_number,
-                      TYPE_CAST_MISMATH_ERR,
+                      TYPE_CAST_MISMATCH_ERR,
                       MESSAGE_ARGUMENT_END);
     }
     return expr;
@@ -571,7 +574,7 @@ fix_function_call_expression(Block *current_block, Expression *expr)
     Expression *func_expr = fix_expression(current_block, expr->u.func_call_expression->function);
     expr->u.func_call_expression->function = func_expr;
 
-    BuiltinFun *builtin_fun = expr->u.identifier->u.builtin_func;
+    BuiltinFun *builtin_fun = func_expr->u.identifier->u.builtin_func;
     if (builtin_fun == NULL)
     {
         compile_error(expr->line_number,
@@ -676,6 +679,7 @@ fix_expression(Block *current_block, Expression *expr)
         expr = fix_type_cast_expression(current_block, expr);
         break;
     case FUNC_CALL_EXPRESSION:
+        expr = fix_function_call_expression(current_block, expr);
         break;
     default:
         DBG_assert(0, ("bad case. kind..%d\n", expr->kind));
@@ -684,8 +688,7 @@ fix_expression(Block *current_block, Expression *expr)
 }
 
 static void
-add_local_variable(FuncDefinition *fd, Declaration *decl,
-                   bool is_parameter)
+add_local_variable(FuncDefinition *fd, Declaration *decl)
 {
     fd->local_variable = realloc(fd->local_variable,
                                  sizeof(Declaration *) * (fd->local_variable_count + 1));
@@ -696,8 +699,7 @@ add_local_variable(FuncDefinition *fd, Declaration *decl,
 
 static void
 add_declaration(Block *current_block, Declaration *decl,
-                FuncDefinition *fd, int line_number,
-                bool is_parameter)
+                FuncDefinition *fd, int line_number)
 {
     if (search_declaration_in_current_block(decl->name, current_block))
     {
@@ -714,11 +716,13 @@ add_declaration(Block *current_block, Declaration *decl,
     if (fd)
     {
         decl->is_local = true;
-        add_local_variable(fd, decl, is_parameter);
+        add_local_variable(fd, decl);
     }
     else
     {
+        Compiler *compiler = get_current_compiler();
         decl->is_local = false;
+        compiler->declaration_list = chain_declaration_list(compiler->declaration_list, decl);
     }
 }
 
@@ -771,10 +775,10 @@ fix_return_statement(Block *current_block, Statement *statement, FuncDefinition 
 }
 
 static void
-fix_declaration_stmt(Statement *stmt, Block *current_block, FuncDefinition *fd)
+fix_declaration_stmt(Block *current_block, Statement *stmt, FuncDefinition *fd)
 {
     Declaration *decl = stmt->u.decl_s;
-    add_declaration(current_block, decl, fd, stmt->line_number, false);
+    add_declaration(current_block, decl, fd, stmt->line_number);
     if (decl->initializer)
     {
         decl->initializer = fix_expression(current_block, decl->initializer);
@@ -802,6 +806,26 @@ fix_declaration_stmt(Statement *stmt, Block *current_block, FuncDefinition *fd)
 }
 
 static void
+fix_assign_stmt(Block *current_block, Statement *stmt)
+{
+    AssignStatement *assign_s = stmt->u.assign_s;
+    assign_s->left = fix_expression(current_block, assign_s->left);
+    assign_s->operand = fix_expression(current_block, assign_s->operand);
+    if (assign_s->operand->kind == INT_EXPRESSION && assign_s->left->type->basic_type == DOUBLE_TYPE)
+    {
+        assign_s->operand->kind = DOUBLE_EXPRESSION;
+        assign_s->operand->type->basic_type = DOUBLE_TYPE;
+        assign_s->operand->u.double_value = assign_s->operand->u.int_value;
+    }
+    else if (assign_s->operand->type->basic_type != assign_s->left->type->basic_type)
+    {
+        compile_error(stmt->line_number,
+                      ASSIGN_TYPE_MISMATCH_ERR,
+                      MESSAGE_ARGUMENT_END);
+    }
+}
+
+static void
 fix_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
 {
     switch (statement->kind)
@@ -813,7 +837,10 @@ fix_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
         fix_return_statement(current_block, statement, fd);
         break;
     case DECLARATION_STATEMENT:
-        fix_declaration_stmt(statement, current_block, fd);
+        fix_declaration_stmt(current_block, statement, fd);
+        break;
+    case ASSIGN_STATEMENT:
+        fix_assign_stmt(current_block, statement);
         break;
     default:
         DBG_assert(0, ("bad case. kind..%d\n", statement->kind));
@@ -842,7 +869,7 @@ add_parameter_as_declaration(FuncDefinition *fd)
         decl = alloc_declaration(param->name, param->type, NULL);
         if (fd->block)
         {
-            add_declaration(fd->block, decl, fd, param->line_number, true);
+            add_declaration(fd->block, decl, fd, param->line_number);
         }
     }
 }

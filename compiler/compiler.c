@@ -12,6 +12,7 @@ Compiler *create_compiler()
     compiler->func_definition_list = NULL;
     compiler->current_block = NULL;
     compiler->declaration_list = NULL;
+    compiler->stmt_list = NULL;
     compiler->current_line_number = 0;
     return compiler;
 }

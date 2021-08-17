@@ -28,7 +28,7 @@ Expression *alloc_identifier_expression(char *identifier)
     Expression *expr = alloc_expression(IDENTIFIER_EXPRESSION);
     IdentifierExpression *identifier_expr = (IdentifierExpression *)malloc(sizeof(IdentifierExpression));
     identifier_expr->kind = 0;
-    identifier_expr->name = NULL;
+    identifier_expr->name = identifier;
     expr->u.identifier = identifier_expr;
     return expr;
 }
@@ -238,6 +238,7 @@ Block *alloc_block(StatementList *list)
 {
     Block *block = (Block *)malloc(sizeof(Block));
     block->statement_list = list;
+    block->declaration_list = NULL;
     return block;
 }
 
