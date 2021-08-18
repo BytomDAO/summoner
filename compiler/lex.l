@@ -21,6 +21,7 @@ void lex_err(char *str) {
     open_string_literal(); 
     BEGIN(RAW_STRING_STATE);
 }
+
 <RAW_STRING_STATE>` {
   yylval.str_value = close_string_literal();
   BEGIN(0);
