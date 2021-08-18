@@ -12,6 +12,8 @@ static int st_string_literal_buffer_alloc_size = 0;
 void open_string_literal(void)
 {
     st_string_literal_buffer_size = 0;
+    st_string_literal_buffer = (char *) malloc(STRING_ALLOC_SIZE);
+    st_string_literal_buffer_alloc_size = STRING_ALLOC_SIZE;
 }
 
 void add_string_literal(char letter)

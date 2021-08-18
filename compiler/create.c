@@ -107,7 +107,7 @@ Statement *alloc_stmt(StatementKind kind)
 {
     Statement *stmt = (Statement *)malloc(sizeof(Statement));
     stmt->kind = kind;
-    stmt->line_number = current_line_number() - 1;
+    stmt->line_number = current_line_number();
     return stmt;
 }
 
