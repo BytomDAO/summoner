@@ -51,7 +51,7 @@ void lex_err(char *str) {
 <STRING_ESCAPE>t  { add_string_literal('\t'); BEGIN(STRING_STATE); }
 <STRING_ESCAPE>v  { add_string_literal('\v'); BEGIN(STRING_STATE); }
 <STRING_ESCAPE>\\ { add_string_literal('\\'); BEGIN(STRING_STATE); }
-<STRING_ESCAPE>.  lex_err("unknow escape");
+<STRING_ESCAPE>.  lex_err("unknown escape");
 
 
 ":="       return DECL_ASSIGN;
