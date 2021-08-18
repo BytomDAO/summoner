@@ -172,7 +172,7 @@ type_specifier:
     | PUBKEY_T  { $$ = alloc_type_specifier(PUBKEY_TYPE); }
     | SIG_T     { $$ = alloc_type_specifier(SIG_TYPE); }
     | HEX_T     { $$ = alloc_type_specifier(HEX_TYPE); }
-              ;
+    ;
 
 block:
       '{' new_line_opt stmt_list new_line_opt      { $<block>$ = open_block(); }
@@ -234,5 +234,6 @@ new_line_opt:
 new_line:
       N           { $$ = $1; increment_line_number(); }
     | new_line N  { $$ = $1; increment_line_number(); }
+    ;
 
 %%
