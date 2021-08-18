@@ -90,8 +90,8 @@ parameter:
     ;
 
 stmt_list:
-      stmt                     {$$ = chain_stmt_list(NULL, $1); }
-    | stmt_list new_line stmt  {$$ = chain_stmt_list($1, $3); }
+      stmt                     { $$ = chain_stmt_list(NULL, $1); }
+    | stmt_list new_line stmt  { $$ = chain_stmt_list($1, $3); }
     ;
 
 stmt:
