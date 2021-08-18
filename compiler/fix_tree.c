@@ -189,13 +189,22 @@ eval_math_expression(Block *current_block, Expression *expr)
                                         expr->u.binary_expression->right
                                             ->u.int_value);
     }
-    else if (left_kind == DOUBLE_EXPRESSION && right_kind == DOUBLE_EXPRESSION)
+    else if ((left_kind == DOUBLE_EXPRESSION && right_kind == DOUBLE_EXPRESSION) ||
+             (left_kind == DOUBLE_EXPRESSION && right_kind == INT_EXPRESSION) ||
+             (left_kind == INT_EXPRESSION && right_kind == DOUBLE_EXPRESSION))
     {
-        expr = eval_math_expression_double(expr,
-                                           expr->u.binary_expression->left
-                                               ->u.double_value,
-                                           expr->u.binary_expression->right
-                                               ->u.double_value);
+        double left_value = expr->u.binary_expression->left->u.double_value;
+        if (left_kind == INT_EXPRESSION)
+        {
+            left_value = expr->u.binary_expression->left->u.int_value;
+        }
+        double right_value = expr->u.binary_expression->right->u.double_value;
+        if (right_kind == INT_EXPRESSION)
+        {
+            right_value = expr->u.binary_expression->right->u.int_value;
+        }
+
+        expr = eval_math_expression_double(expr, left_value, right_value);
     }
     else if (left_kind == STRING_EXPRESSION && right_kind == STRING_EXPRESSION && expr->kind == ADD_EXPRESSION)
     {
@@ -339,10 +348,7 @@ static Expression *
 eval_compare_expression_string(Expression *expr,
                                char *left, char *right)
 {
-    int cmp;
-
-    cmp = strcmp(left, right);
-
+    int cmp = strcmp(left, right);
     if (expr->kind == EQ_EXPRESSION)
     {
         expr->u.boolean_value = (cmp == 0);
@@ -775,6 +781,34 @@ fix_return_statement(Block *current_block, Statement *statement, FuncDefinition 
 }
 
 static void
+implicit_type_cast(Expression *expr, TypeSpecifier *type)
+{
+    if (expr->kind == INT_EXPRESSION && type->basic_type == DOUBLE_TYPE)
+    {
+        expr->kind = DOUBLE_EXPRESSION;
+        expr->type->basic_type = DOUBLE_TYPE;
+        expr->u.double_value = expr->u.int_value;
+    }
+    else if (expr->kind == INT_EXPRESSION && type->basic_type == AMOUNT_TYPE)
+    {
+        expr->type->basic_type = AMOUNT_TYPE;
+    }
+    else if (expr->kind == STRING_EXPRESSION &&
+             (type->basic_type == ASSET_TYPE || type->basic_type == HASH_TYPE ||
+              type->basic_type == PUBKEY_TYPE || type->basic_type == SIG_TYPE ||
+              type->basic_type == HEX_TYPE))
+    {
+        expr->type->basic_type = type->basic_type;
+    }
+    else
+    {
+        compile_error(expr->line_number,
+                      TYPE_CAST_MISMATCH_ERR,
+                      MESSAGE_ARGUMENT_END);
+    }
+}
+
+static void
 fix_declaration_stmt(Block *current_block, Statement *stmt, FuncDefinition *fd)
 {
     Declaration *decl = stmt->u.decl_s;
@@ -786,17 +820,9 @@ fix_declaration_stmt(Block *current_block, Statement *stmt, FuncDefinition *fd)
         {
             decl->type = decl->initializer->type;
         }
-        else if (decl->initializer->kind == INT_EXPRESSION && decl->type->basic_type == DOUBLE_TYPE)
-        {
-            decl->initializer->kind = DOUBLE_EXPRESSION;
-            decl->initializer->type->basic_type = DOUBLE_TYPE;
-            decl->initializer->u.double_value = decl->initializer->u.int_value;
-        }
         else if (decl->initializer->type->basic_type != decl->type->basic_type)
         {
-            compile_error(stmt->line_number,
-                          DECLARATION_TYPE_MISMATCH_ERR,
-                          MESSAGE_ARGUMENT_END);
+            implicit_type_cast(decl->initializer, decl->type);
         }
     }
     else
@@ -811,17 +837,9 @@ fix_assign_stmt(Block *current_block, Statement *stmt)
     AssignStatement *assign_s = stmt->u.assign_s;
     assign_s->left = fix_expression(current_block, assign_s->left);
     assign_s->operand = fix_expression(current_block, assign_s->operand);
-    if (assign_s->operand->kind == INT_EXPRESSION && assign_s->left->type->basic_type == DOUBLE_TYPE)
+    if (assign_s->operand->type->basic_type != assign_s->left->type->basic_type)
     {
-        assign_s->operand->kind = DOUBLE_EXPRESSION;
-        assign_s->operand->type->basic_type = DOUBLE_TYPE;
-        assign_s->operand->u.double_value = assign_s->operand->u.int_value;
-    }
-    else if (assign_s->operand->type->basic_type != assign_s->left->type->basic_type)
-    {
-        compile_error(stmt->line_number,
-                      ASSIGN_TYPE_MISMATCH_ERR,
-                      MESSAGE_ARGUMENT_END);
+        implicit_type_cast(assign_s->operand, assign_s->left->type);
     }
 }
 
