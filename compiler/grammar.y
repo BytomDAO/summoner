@@ -69,15 +69,15 @@ definition_list:
 
 definition:
       func_definition             { $$ = alloc_definition(); add_func_definition_to_compiler($1); }
-    | const_stmt                 { $$ = alloc_definition(); add_stmt_to_compiler($1); }
-    | variable_declaration_stmt  { $$ = alloc_definition(); add_stmt_to_compiler($1); }
+    | const_stmt                  { $$ = alloc_definition(); add_stmt_to_compiler($1); }
+    | variable_declaration_stmt   { $$ = alloc_definition(); add_stmt_to_compiler($1); }
     ;
 
 func_definition:
       FUNCTION IDENTIFIER '(' parameter_list ')' type_specifier block  { $$ = alloc_func_definition($2, $4, $6, $7); }
     | FUNCTION IDENTIFIER '(' ')' type_specifier block                 { $$ = alloc_func_definition($2, NULL, $5, $6); }
-    | FUNCTION IDENTIFIER '(' parameter_list ')' block                { $$ = alloc_func_definition($2, $4, NULL, $6); }
-    | FUNCTION IDENTIFIER '(' ')' block                               { $$ = alloc_func_definition($2, NULL, NULL, $5); }
+    | FUNCTION IDENTIFIER '(' parameter_list ')' block                 { $$ = alloc_func_definition($2, $4, NULL, $6); }
+    | FUNCTION IDENTIFIER '(' ')' block                                { $$ = alloc_func_definition($2, NULL, NULL, $5); }
     ;
 
 parameter_list:
@@ -116,7 +116,7 @@ compound_assign_stmt:
     ;
 
 const_stmt:
-      CONST IDENTIFIER '=' expr                { $$ = alloc_const_declaration_stmt($2, NULL, $4); }
+      CONST IDENTIFIER '=' expr                 { $$ = alloc_const_declaration_stmt($2, NULL, $4); }
     | CONST IDENTIFIER type_specifier '=' expr  { $$ = alloc_const_declaration_stmt($2, $3, $5); }
     ;
 
@@ -138,7 +138,7 @@ variable_declaration_list:
 variable_declaration:       
       IDENTIFIER type_specifier           { $$ = alloc_declaration($1, $2, NULL); }
     | IDENTIFIER type_specifier '=' expr  { $$ = alloc_declaration($1, $2, $4); }
-    | IDENTIFIER '=' expr                { $$ = alloc_declaration($1, NULL, $3); }
+    | IDENTIFIER '=' expr                 { $$ = alloc_declaration($1, NULL, $3); }
     ;
 
 return_stmt:
@@ -183,12 +183,12 @@ block:
 expr:
       literal
     | identifier_expr
-    | expr '+' expr               { $$ = alloc_binary_expression(ADD_EXPRESSION, $1, $3); }
-    | expr '-' expr               { $$ = alloc_binary_expression(SUB_EXPRESSION, $1, $3); }
-    | expr '*' expr               { $$ = alloc_binary_expression(MUL_EXPRESSION, $1, $3); }
-    | expr '/' expr               { $$ = alloc_binary_expression(DIV_EXPRESSION, $1, $3); }
-    | '-' expr %prec MINUS        { $$ = alloc_unary_expression(MINUS_EXPRESSION, $2); }
-    | '(' expr ')'                { $$ = $2; }
+    | expr '+' expr                { $$ = alloc_binary_expression(ADD_EXPRESSION, $1, $3); }
+    | expr '-' expr                { $$ = alloc_binary_expression(SUB_EXPRESSION, $1, $3); }
+    | expr '*' expr                { $$ = alloc_binary_expression(MUL_EXPRESSION, $1, $3); }
+    | expr '/' expr                { $$ = alloc_binary_expression(DIV_EXPRESSION, $1, $3); }
+    | '-' expr %prec MINUS         { $$ = alloc_unary_expression(MINUS_EXPRESSION, $2); }
+    | '(' expr ')'                 { $$ = $2; }
     | type_specifier '(' expr ')'  { $$ = alloc_type_cast_expression($1, $3); }
     | bool_expr
     | func_call_expr
