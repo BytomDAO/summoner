@@ -129,8 +129,6 @@ static ErrorDefinition dkc_error_message_format[] = {
     {"字符字面量中包含了2个以上的字符。"},
     {"类型转换不匹配。"},
     {"函数调用类型不匹配。"},
-    {"变量声明类型与表达式类型不匹配。"},
-    {"变量赋值类型不匹配。"},
     {"返回值类型不匹配."},
     {"dummy"}};
 
@@ -325,7 +323,7 @@ void compile_error(int line_number, CompileError id, ...)
     format_message(line_number,
                    &dkc_error_message_format[id],
                    &message, ap);
-    fprintf(stderr, "%3d:", line_number);
+    fprintf(stderr, "line %d:", line_number);
     dvm_print_wcs_ln(stderr, message.string);
     va_end(ap);
 

@@ -335,6 +335,7 @@ typedef struct Compiler
 
 Compiler *create_compiler();
 Compiler *get_current_compiler();
+void increment_line_number();
 void set_current_compiler(Compiler *compiler);
 void add_stmt_to_compiler(Statement *stmt);
 void add_func_definition_to_compiler(FuncDefinition *func_definition);

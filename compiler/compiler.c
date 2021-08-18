@@ -13,7 +13,7 @@ Compiler *create_compiler()
     compiler->current_block = NULL;
     compiler->declaration_list = NULL;
     compiler->stmt_list = NULL;
-    compiler->current_line_number = 0;
+    compiler->current_line_number = 1;
     return compiler;
 }
 
@@ -37,4 +37,9 @@ void add_stmt_to_compiler(Statement *stmt)
 {
     Compiler *compiler = get_current_compiler();
     compiler->stmt_list = chain_stmt_list(compiler->stmt_list, stmt);
+}
+
+void increment_line_number()
+{
+    get_current_compiler()->current_line_number++;
 }

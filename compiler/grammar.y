@@ -27,7 +27,7 @@ int yyerror(const char *s);
 }
 
 %token <double_value> DOUBLE_LITERAL
-%token <int_value> INT_LITERAL BOOL_LITERAL
+%token <int_value> INT_LITERAL BOOL_LITERAL N
 %token <str_value> STRING_LITERAL
 %token <identifier> IDENTIFIER
 %token VAR CONST FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
@@ -45,6 +45,7 @@ int yyerror(const char *s);
 %type <type_specifier> type_specifier
 %type <parameter_list> parameter_list parameter
 %type <argument_list> argument_list
+%type <int_value> new_line
 
 %nonassoc '=' ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN DECL_ASSIGN
 %left AND OR
@@ -137,7 +138,7 @@ variable_declaration_list:
 variable_declaration:       
                       IDENTIFIER type_specifier          { $$ = alloc_declaration($1, $2, NULL); }
                     | IDENTIFIER type_specifier '=' expr { $$ = alloc_declaration($1, $2, $4); }
-                    | IDENTIFIER '=' expr                { $$ = alloc_declaration($1, NULL, $3); }
+                    | IDENTIFIER '=' expr               { $$ = alloc_declaration($1, NULL, $3); }
                     ;
 
 type_specifier:
@@ -231,7 +232,7 @@ new_line_option:
                ;
 
 new_line:
-          '\n'
-        | new_line '\n'
+          N          { $$ = $1; increment_line_number(); }
+        | new_line N { $$ = $1; increment_line_number(); }
 
 %%

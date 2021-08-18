@@ -2,10 +2,16 @@
 #include <stdlib.h>
 #include "summoner.h"
 
+static int current_line_number()
+{
+    return get_current_compiler()->current_line_number;
+}
+
 Expression *alloc_expression(ExpressionKind kind)
 {
     Expression *expr = (Expression *)malloc(sizeof(Expression));
     expr->kind = kind;
+    expr->line_number = current_line_number();
     return expr;
 }
 
@@ -101,6 +107,7 @@ Statement *alloc_stmt(StatementKind kind)
 {
     Statement *stmt = (Statement *)malloc(sizeof(Statement));
     stmt->kind = kind;
+    stmt->line_number = current_line_number();
     return stmt;
 }
 
@@ -305,12 +312,12 @@ FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition 
 
 Definition *alloc_definition()
 {
-    return (Definition *) malloc(sizeof(Definition));
+    return (Definition *)malloc(sizeof(Definition));
 }
 
 DefinitionList *alloc_definition_list()
 {
-    return (DefinitionList *) malloc(sizeof(DefinitionList));
+    return (DefinitionList *)malloc(sizeof(DefinitionList));
 }
 
 Declaration *chain_declaration_list(Declaration *list, Declaration *next)

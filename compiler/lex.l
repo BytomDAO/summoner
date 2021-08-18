@@ -14,7 +14,7 @@ void lex_err(char *str) {
 %%
 
 "//"         BEGIN(COMMENT);
-<COMMENT>\n  { BEGIN(0); return '\n'; }
+<COMMENT>\n  { BEGIN(0); return N; }
 <COMMENT>.   ; // eat anything in comment
 
 ` { 
@@ -26,7 +26,7 @@ void lex_err(char *str) {
   BEGIN(0);
   return STRING_LITERAL;
 }
-<RAW_STRING_STATE>\n add_string_literal('\n');
+<RAW_STRING_STATE>\n { add_string_literal('\n'); increment_line_number(); }
 <RAW_STRING_STATE>.  add_string_literal(yytext[0]);
 
 \" { 
@@ -51,11 +51,8 @@ void lex_err(char *str) {
 <STRING_ESCAPE>t  { add_string_literal('\t'); BEGIN(STRING_STATE); }
 <STRING_ESCAPE>v  { add_string_literal('\v'); BEGIN(STRING_STATE); }
 <STRING_ESCAPE>\\ { add_string_literal('\\'); BEGIN(STRING_STATE); }
-<STRING_ESCAPE>.  lex_err("unknow escape");
+<STRING_ESCAPE>.  lex_err("unknown escape");
 
-[+\-*/\(\)<>!{}\n=,] {
-    return *yytext;
-}
 
 ":="       return DECL_ASSIGN;
 "+="       return ADD_ASSIGN;
@@ -88,6 +85,10 @@ void lex_err(char *str) {
 "pubkey"   return PUBKEY_T;
 "sig"      return SIG_T;
 "hex"      return HEX_T;
+
+[+\-*/\(\)<>!{}=,] return *yytext;
+
+"\n" { return N; }
 
 "true"|"false" {
     yylval.int_value = strcmp(yytext, "false");
