@@ -8,22 +8,22 @@ int yyerror(const char *s);
 %}
 
 %union {
-    char *                 identifier;
-    char *                 str_value;
-    double                 double_value;
-    int                    int_value;
-    struct Expression *    expression;
-    struct Declaration *   declaration;
-    struct Statement *     statement;
-    struct StatementList * statement_list;
-    struct Block *         block;
-    struct Elseif *        elseif;
+    char *                  identifier;
+    char *                  str_value;
+    double                  double_value;
+    int                     int_value;
+    struct Expression *     expression;
+    struct Declaration *    declaration;
+    struct Statement *      statement;
+    struct StatementList *  statement_list;
+    struct Block *          block;
+    struct Elseif *         elseif;
     struct FuncDefinition * func_definition;
     struct Definition *     definition;
     struct DefinitionList * definition_list;
     struct TypeSpecifier *  type_specifier;
-    struct ParameterList * parameter_list;
-    struct ArgumentList *  argument_list;
+    struct ParameterList *  parameter_list;
+    struct ArgumentList *   argument_list;
 }
 
 %token <double_value> DOUBLE_LITERAL
