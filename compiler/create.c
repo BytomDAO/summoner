@@ -281,8 +281,6 @@ ParameterList *chain_parameter(ParameterList *list, ParameterList *parameter)
 
 FuncDefinition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block)
 {
-    FuncDefinition *fd;
-
     if (search_function(name) || search_declaration(name, NULL))
     {
         compile_error(get_current_compiler()->current_line_number,
