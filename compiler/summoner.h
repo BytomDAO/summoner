@@ -370,4 +370,9 @@ SVM_Executable *smc_code_gen(Compiler *compiler);
 int svm_dump_instruction(FILE *fp, SVM_Byte *code, int index);
 void svm_disassemble(SVM_Executable *exe);
 
+/** util.c */
+Declaration *search_declaration(char *identifier, Block *block);
+Declaration *search_declaration_in_current_block(char *identifier, Block *block);
+FuncDefinition *search_function(char *name);
+
 #endif
