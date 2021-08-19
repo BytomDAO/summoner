@@ -75,13 +75,12 @@ definition:
 
 func_definition:
       FUNCTION IDENTIFIER '(' parameter_list ')' type_specifier block  { $$ = alloc_func_definition($2, $4, $6, $7); }
-    | FUNCTION IDENTIFIER '(' ')' type_specifier block                 { $$ = alloc_func_definition($2, NULL, $5, $6); }
     | FUNCTION IDENTIFIER '(' parameter_list ')' block                 { $$ = alloc_func_definition($2, $4, NULL, $6); }
-    | FUNCTION IDENTIFIER '(' ')' block                                { $$ = alloc_func_definition($2, NULL, NULL, $5); }
     ;
 
 parameter_list:
-      parameter
+                                    { $$ = NULL; }
+    | parameter
     | parameter_list ',' parameter  { $$ = chain_parameter($1, $3); }
     ;
 
@@ -214,8 +213,7 @@ bool_expr:
     ;
 
 func_call_expr:
-      identifier_expr '(' ')'                { $$ = alloc_func_call_expression($1, NULL); }
-    | identifier_expr '(' argument_list ')'  { $$ = alloc_func_call_expression($1, $3); }
+      identifier_expr '(' argument_list ')'  { $$ = alloc_func_call_expression($1, $3); }
     ;
 
 identifier_expr:
@@ -223,8 +221,9 @@ identifier_expr:
     ;
 
 argument_list:
-      expr                    { $$ = chain_argument_list(NULL, $1); }
-    | argument_list ',' expr  { $$ = chain_argument_list($1, $3); }
+                             { $$ = NULL; }
+    | expr                   { $$ = chain_argument_list(NULL, $1); }
+    | argument_list ',' expr { $$ = chain_argument_list($1, $3); }
     ;
 
 new_line_opt:
