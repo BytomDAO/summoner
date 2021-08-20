@@ -67,8 +67,8 @@ fix_labels(OpcodeBuf *ob)
     int address;
 
     for (i = 0; i < ob->size; i++) {
-        if (ob->code[i] == JUMP
-            || ob->code[i] == JUMPIF) {
+        if (ob->code[i] == OP_JUMP
+            || ob->code[i] == OP_JUMPIF) {
             label = (ob->code[i+1] << 8) + (ob->code[i+2]);
             address = ob->label_table[label].label_address;
             ob->code[i+1] = (SVM_Byte)(address >> 8);
@@ -270,9 +270,9 @@ generate_boolean_expression(SVM_Executable *cf, Expression *expr,
                             OpcodeBuf *ob)
 {
     if (expr->u.boolean_value) {
-        generate_code(ob, TRUE, 1);
+        generate_code(ob, OP_TRUE, 1);
     } else {
-        generate_code(ob, FALSE, 0);
+        generate_code(ob, OP_FALSE, 0);
     }
 }
 
@@ -281,9 +281,9 @@ generate_int_expression(SVM_Executable *cf, int value,
                         OpcodeBuf *ob)
 {
     if (value >= 0 && value < 256) {
-        generate_code(ob, PUSHDATA1, value);
+        generate_code(ob, OP_PUSHDATA1, value);
     } else if (value >= 0 && value < 65536) {
-        generate_code(ob, PUSHDATA2, value);
+        generate_code(ob, OP_PUSHDATA2, value);
     } else {
     // TODO: add constpool
     }
@@ -310,7 +310,7 @@ generate_identifier_expression(SVM_Executable *exe, Block *block,
         generate_identifier(expr->u.identifier, ob);
         break;
     case FUNC_DEFINITION:
-        generate_code(ob, INVOKE);
+        generate_code(ob, OP_INVOKE);
         break;
     case CONST_DEFINITION:
         generate_identifier(expr->u.identifier, ob);
@@ -395,8 +395,8 @@ generate_logical_expression(SVM_Executable *exe, Block *block,
 
     true_label = get_label(ob);
     generate_expression(exe, block, expr->u.binary_expression->left, ob);
-    generate_code(ob, DUP);
-    generate_code(ob, JUMPIF, true_label);
+    generate_code(ob, OP_DUP);
+    generate_code(ob, OP_JUMPIF, true_label);
     generate_expression(exe, block, expr->u.binary_expression->right, ob);
     generate_code(ob, code);
     set_label(ob, true_label);
@@ -428,60 +428,60 @@ generate_expression(SVM_Executable *exe, Block *current_block,
         break;
    case ADD_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   ADD, ob);
+                                   OP_ADD, ob);
         break;
     case SUB_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   SUB, ob);
+                                   OP_SUB, ob);
         break;
     case MUL_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   MUL, ob);
+                                   OP_MUL, ob);
         break;
     case DIV_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   DIV, ob);
+                                   OP_DIV, ob);
         break;
     case MOD_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   MOD, ob);
+                                   OP_MOD, ob);
         break;
     case EQ_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   EQUAL, ob);
+                                   OP_EQUAL, ob);
         break;
     case NE_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   NOTEQUAL0, ob);
+                                   OP_0NOTEQUAL, ob);
         break;
     case GT_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   GREATERTHAN, ob);
+                                   OP_GREATERTHAN, ob);
         break;
     case GE_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   GREATERTHANOREQUAL, ob);
+                                   OP_GREATERTHANOREQUAL, ob);
         break;
     case LT_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   LESSTHAN, ob);
+                                   OP_LESSTHAN, ob);
         break;
     case LE_EXPRESSION:
         generate_binary_expression(exe, current_block, expr,
-                                   LESSTHANOREQUAL, ob);
+                                   OP_LESSTHANOREQUAL, ob);
     case MINUS_EXPRESSION:
         generate_expression(exe, current_block, expr->u.unary_expression, ob);
-        generate_code(ob, NEGATE);
+        generate_code(ob, OP_NEGATE);
         break;
     case AND_EXPRESSION:
-        generate_logical_expression(exe, current_block, expr, ob, AND);
+        generate_logical_expression(exe, current_block, expr, ob, OP_AND);
         break;
     case OR_EXPRESSION:
-        generate_logical_expression(exe, current_block, expr, ob, OR);
+        generate_logical_expression(exe, current_block, expr, ob, OP_OR);
         break;
     case NOT_EXPRESSION:
         generate_expression(exe, current_block, expr->u.unary_expression, ob);
-        generate_code(ob, NOT);
+        generate_code(ob, OP_NOT);
         break;
         default:
     printf("expr->kind..%d\n", expr->kind);
@@ -495,7 +495,7 @@ generate_expression_statement(SVM_Executable *exe, Block *block,
                               OpcodeBuf *ob)
 {
     generate_expression(exe, block, expr, ob);
-    generate_code(ob, DROP);
+    generate_code(ob, OP_DROP);
 }
 
 // TODO: huge swith-case
