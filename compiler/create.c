@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "error.h"
 #include "summoner.h"
 
 static int current_line_number()
@@ -280,6 +281,14 @@ ParameterList *chain_parameter(ParameterList *list, ParameterList *parameter)
 
 FuncDefinition *alloc_func_definition(char *name, ParameterList *parameters, TypeSpecifier *return_type, Block *block)
 {
+    if (search_function(name) || search_declaration(name, NULL))
+    {
+        compile_error(get_current_compiler()->current_line_number,
+                          FUNCTION_MULTIPLE_DEFINE_ERR,
+                          STRING_MESSAGE_ARGUMENT, "name", name,
+                          MESSAGE_ARGUMENT_END);
+    }
+
     FuncDefinition *func_d = (FuncDefinition *)malloc(sizeof(FuncDefinition));
     func_d->name = name;
     func_d->parameters = parameters;

@@ -9,52 +9,6 @@ extern BuiltinFun *search_builtin_function(char *name);
 static Expression *fix_expression(Block *current_block, Expression *expr);
 static void fix_statement_list(Block *current_block, StatementList *list, FuncDefinition *fd);
 
-Declaration *search_declaration_in_current_block(char *identifier, Block *block)
-{
-    if (!block)
-    {
-        return NULL;
-    }
-
-    Declaration *d_pos;
-    for (d_pos = block->declaration_list; d_pos; d_pos = d_pos->next)
-    {
-        if (!strcmp(identifier, d_pos->name))
-        {
-            return d_pos;
-        }
-    }
-    return NULL;
-}
-
-Declaration *search_declaration(char *identifier, Block *block)
-{
-    Block *b_pos;
-    Declaration *d_pos;
-    Compiler *compiler;
-
-    for (b_pos = block; b_pos; b_pos = b_pos->outer_block)
-    {
-        for (d_pos = b_pos->declaration_list; d_pos; d_pos = d_pos->next)
-        {
-            if (!strcmp(identifier, d_pos->name))
-            {
-                return d_pos;
-            }
-        }
-    }
-
-    compiler = get_current_compiler();
-    for (d_pos = compiler->declaration_list; d_pos; d_pos = d_pos->next)
-    {
-        if (!strcmp(identifier, d_pos->name))
-        {
-            return d_pos;
-        }
-    }
-    return NULL;
-}
-
 static Expression *
 fix_identifier_expression(Block *current_block, Expression *expr)
 {
