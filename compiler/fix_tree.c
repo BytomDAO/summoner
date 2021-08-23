@@ -839,25 +839,47 @@ add_parameter_as_declaration(FuncDefinition *fd)
     for (param = fd->parameters; param; param = param->next)
     {
         decl = alloc_declaration(param->name, param->type, NULL);
-        if (fd->block)
+        if (fd->code_block)
         {
-            add_declaration(fd->block, decl, fd, param->line_number);
+            add_declaration(fd->code_block, decl, fd, param->line_number);
         }
     }
+}
+
+static int
+reserve_function_index(Compiler *compiler, FuncDefinition *src)
+{
+    int i;
+    SVM_Function *dest;
+
+    compiler->svm_function
+        = realloc(compiler->svm_function,
+                      sizeof(SVM_Function) * (compiler->svm_function_count+1));
+    dest = &compiler->svm_function[compiler->svm_function_count];
+    compiler->svm_function_count++;
+
+    dest->name = strdup(src->name);
+
+    return compiler->svm_function_count - 1;
 }
 
 static void fix_function(FuncDefinition *fd)
 {
     add_parameter_as_declaration(fd);
-    if (fd->block)
+    if (fd->code_block)
     {
-        fix_statement_list(fd->block, fd->block->statement_list, fd);
+        fix_statement_list(fd->code_block, fd->code_block->statement_list, fd);
     }
 }
 
 void fix_tree(Compiler *compiler)
 {
     FuncDefinition *func_pos;
+
+   for (func_pos = compiler->func_definition_list; func_pos;
+         func_pos = func_pos->next) {
+        reserve_function_index(compiler, func_pos);
+    }
 
     fix_statement_list(NULL, compiler->stmt_list, NULL);
 

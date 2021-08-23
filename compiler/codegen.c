@@ -36,6 +36,8 @@ alloc_executable()
     exe->constant_pool = NULL;
     exe->global_variable_count = 0;
     exe->global_variable = NULL;
+    exe->function_count = 0;
+    exe->function = NULL;
     exe->constant_count = 0;
     exe->constant_definition = NULL;
     exe->type_specifier_count = 0;
@@ -204,19 +206,58 @@ copy_local_variables(FuncDefinition *fd, int param_count)
 }
 */
 
+static int
+count_parameter(ParameterList *src)
+{
+    ParameterList *param;
+    int param_count = 0;
+
+    for (param = src; param; param = param->next) {
+        param_count++;
+    }
+
+    return param_count;
+}
+
+static SVM_Variable *
+copy_parameter_list(ParameterList *src, int *param_count_p)
+{
+    ParameterList *param;
+    SVM_Variable *dest;
+    int param_count;
+    int i;
+
+    param_count = count_parameter(src);
+    *param_count_p = param_count;
+
+    dest = malloc(sizeof(SVM_Variable) * param_count);
+    
+    for (param = src, i = 0; param; param = param->next, i++) {
+        dest[i].name = strdup(param->name);
+        dest[i].type = alloc_type_specifier(param->type->basic_type);
+    }
+
+    return dest;
+}
+      
 static void
-add_function(SVM_Executable *exe, FuncDefinition *src)
+add_function(SVM_Executable *exe, FuncDefinition *src, SVM_Function *dest)
 {
     OpcodeBuf ob;
     init_opcode_buf(&ob);
-    generate_statement_list(exe, src->block, src->block->statement_list, &ob);
-    exe->function->code_block.code_size = ob.size;
-    exe->function->code_block.code = fix_opcode_buf(&ob);
-    exe->function->code_block.line_number_size = ob.line_number_size;
-    exe->function->code_block.line_number = ob.line_number;
-    //exe->function->local_variable
-    //    = copy_local_variables(src, exe->function->parameter_count);
-    //exe->function->local_variable
+
+    dest->type = alloc_type_specifier(src->return_type->basic_type);
+    dest->parameter = copy_parameter_list(src->parameters,
+                                          &dest->parameter_count);
+
+    generate_statement_list(exe, src->code_block, src->code_block->statement_list, &ob);
+    dest->code_block.code_size = ob.size;
+    dest->code_block.code = fix_opcode_buf(&ob);
+    dest->code_block.line_number_size = ob.line_number_size;
+    dest->code_block.line_number = ob.line_number;
+    //dest->local_variable
+    //    = copy_local_variables(src, dest->parameter_count);
+    // dest->local_variable
     //    = src->local_variable_count - dest->parameter_count;
 }
 
@@ -226,7 +267,7 @@ add_functions(Compiler *compiler, SVM_Executable *exe)
     FuncDefinition *fd;
     for (fd = compiler->func_definition_list; fd; fd = fd->next)
     {
-        add_function(exe, fd);
+        add_function(exe, fd, &compiler->svm_function[0]);
     }
 }
 
@@ -252,10 +293,11 @@ generate_if_statement(SVM_Executable *exe, Block *current_block,
 }
 
 static void
-generate_return_statement(SVM_Executable *exe, Block *current_block,
+generate_return_statement(SVM_Executable *exe, Block *block,
                           Expression *return_stmt,
                           OpcodeBuf *ob)
 {
+    generate_expression(exe, block, return_stmt, ob);
 }
 
 static void
@@ -280,8 +322,8 @@ static void
 generate_int_expression(SVM_Executable *cf, int value,
                         OpcodeBuf *ob)
 {
-    if (value >= 0 && value < 256) {
-        generate_code(ob, OP_PUSHDATA1, value);
+    if (value > 0 && value < 16) {
+        generate_code(ob, OP_1 + value - 1, value);
     } else if (value >= 0 && value < 65536) {
         generate_code(ob, OP_PUSHDATA2, value);
     } else {
@@ -566,6 +608,8 @@ smc_code_gen(Compiler *compiler)
 
     exe->constant_count = compiler->svm_constant_count;
     exe->constant_definition = compiler->svm_constant;
+    exe->function_count = compiler->svm_function_count;
+    exe->function = compiler->svm_function;
 
     add_global_variable(compiler, exe);
     add_functions(compiler, exe);

@@ -10,6 +10,8 @@ Compiler *create_compiler()
     compiler->svm_constant = NULL;
     compiler->function_count = 0;
     compiler->func_definition_list = NULL;
+    compiler->svm_function_count = 0;
+    compiler->svm_function = NULL;
     compiler->current_block = NULL;
     compiler->declaration_list = NULL;
     compiler->stmt_list = NULL;

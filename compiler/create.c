@@ -297,7 +297,7 @@ FuncDefinition *alloc_func_definition(char *name, ParameterList *parameters, Typ
     {
         func_d->return_type = alloc_type_specifier(VOID_TYPE);
     }
-    func_d->block = block;
+    func_d->code_block = block;
     func_d->local_variable_count = 0;
     func_d->local_variable = NULL;
     func_d->next = NULL;
