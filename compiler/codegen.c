@@ -37,7 +37,7 @@ alloc_executable()
     exe->global_variable_count = 0;
     exe->global_variable = NULL;
     exe->function_count = 0;
-    exe->function_count = 0;
+    exe->function = NULL;
     exe->constant_count = 0;
     exe->constant_definition = NULL;
     exe->type_specifier_count = 0;
@@ -205,16 +205,6 @@ copy_local_variables(FuncDefinition *fd, int param_count)
     return dest;
 }
 */
-TypeSpecifier *
-copy_type_specifier(TypeSpecifier *src)
-{ 
-    TypeSpecifier *dest;
-
-    dest = malloc(sizeof(TypeSpecifier));  
-    dest->basic_type = src->basic_type;
-
-    return dest;
-}
 
 static int
 count_parameter(ParameterList *src)
@@ -244,7 +234,7 @@ copy_parameter_list(ParameterList *src, int *param_count_p)
     
     for (param = src, i = 0; param; param = param->next, i++) {
         dest[i].name = strdup(param->name);
-        dest[i].type = copy_type_specifier(param->type);
+        dest[i].type = alloc_type_specifier(param->type->basic_type);
     }
 
     return dest;
@@ -256,7 +246,7 @@ add_function(SVM_Executable *exe, FuncDefinition *src, SVM_Function *dest)
     OpcodeBuf ob;
     init_opcode_buf(&ob);
 
-    dest->type = copy_type_specifier(src->return_type);
+    dest->type = alloc_type_specifier(src->return_type->basic_type);
     dest->parameter = copy_parameter_list(src->parameters,
                                           &dest->parameter_count);
 
