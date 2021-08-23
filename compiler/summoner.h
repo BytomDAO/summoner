@@ -237,7 +237,7 @@ typedef struct FuncDefinition
     char *name;
     ParameterList *parameters;
     TypeSpecifier *return_type;
-    Block *block;
+    Block *code_block;
     int local_variable_count;
     Declaration **local_variable;
     struct FuncDefinition *next;
@@ -327,6 +327,8 @@ typedef struct Compiler
     SVM_Constant *svm_constant;
     int function_count;
     FuncDefinition *func_definition_list;
+    int            svm_function_count;
+    SVM_Function   *svm_function;
     StatementList *stmt_list;
     Block *current_block;
     Declaration *declaration_list;
