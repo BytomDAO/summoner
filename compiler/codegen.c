@@ -272,10 +272,36 @@ add_functions(Compiler *compiler, SVM_Executable *exe)
 }
 
 static void
-generate_assign_statement(SVM_Executable *exe, Block *current_block,
+generate_pop_to_identifier(Declaration *decl, OpcodeBuf *ob)
+{
+    switch (decl->variable_index) {
+    case 0:
+        break;
+    case 1:
+        generate_code(ob, OP_DUP);
+        break;    
+    default:
+        generate_code(ob, OP_ROLL, decl->variable_index);
+        break;
+    }
+    generate_code(ob, OP_DROP);
+}
+
+static void
+generate_pop_to_lvalue(SVM_Executable *exe, Block *block,
+                       Expression *expr, OpcodeBuf *ob)
+{
+    generate_pop_to_identifier(expr->u.identifier->u.declaration, ob);
+
+}
+static void
+generate_assign_statement(SVM_Executable *exe, Block *block,
                           AssignStatement *assign_stmt,
                           OpcodeBuf *ob)
 {
+    generate_expression(exe, block, assign_stmt->operand, ob);
+    generate_pop_to_lvalue(exe, block, assign_stmt->left, ob);
+
 }
 
 static void
