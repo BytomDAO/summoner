@@ -798,6 +798,18 @@ fix_assign_stmt(Block *current_block, Statement *stmt)
 }
 
 static void
+fix_expression_stmt(Block *current_block, Statement *stmt)
+{
+    stmt->u.expr_s = fix_expression(current_block, stmt->u.expr_s);
+    if (stmt->u.expr_s->kind != FUNC_CALL_EXPRESSION)
+    {
+        compile_error(stmt->line_number,
+                      EXPR_EVALUATED_BUT_NOT_USED,
+                      MESSAGE_ARGUMENT_END);
+    }
+}
+
+static void
 fix_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
 {
     switch (statement->kind)
@@ -813,6 +825,9 @@ fix_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
         break;
     case ASSIGN_STATEMENT:
         fix_assign_stmt(current_block, statement);
+        break;
+    case EXPRESSION_STATEMENT:
+        fix_expression_stmt(current_block, statement);
         break;
     default:
         DBG_assert(0, ("bad case. kind..%d\n", statement->kind));
