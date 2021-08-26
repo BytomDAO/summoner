@@ -827,7 +827,8 @@ fix_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
         fix_assign_stmt(current_block, statement);
         break;
     case EXPRESSION_STATEMENT:
-
+        fix_expression_stmt(current_block, statement);
+        break;
     default:
         DBG_assert(0, ("bad case. kind..%d\n", statement->kind));
     }
