@@ -1,7 +1,6 @@
 #include "summoner.h"
 #include <stdlib.h>
 #include <string.h>
-#include "error.h"
 #include "../include/SVM_code.h"
 
 extern OpcodeInfo svm_opcode_info[];
@@ -425,13 +424,6 @@ generate_function_call_expression(SVM_Executable *exe, Block *block,
 
     BuiltinFun *builtin_fun = expr->u.func_call_expression
                                 ->function->u.identifier->u.builtin_func;
-    if (builtin_fun == NULL) {
-        compile_error(expr->line_number,
-                      FUNCTION_NOT_FOUND_ERR,
-                      STRING_MESSAGE_ARGUMENT, "name",
-                      expr->u.identifier->name,
-                      MESSAGE_ARGUMENT_END);
-    }
     generate_builtin_code(ob, builtin_fun->op_codes, builtin_fun->ops_count);
 }
 
