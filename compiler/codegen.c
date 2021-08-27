@@ -128,56 +128,10 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
     // TODO: derive type: FUNCTION_DERIVE/ARRAY_DERIVE
 }
 static void
-generate_builtin_code(OpcodeBuf *ob, const char *ops)
+generate_builtin_code(OpcodeBuf *ob, SVM_Opcode *ops, int op_cnt)
 {
-
-    if(!strcmp("sha3", ops)) {
-        ob->code[ob->size] = OP_SHA3;
-        ob->size++;
-    } else if(!strcmp("sha256", ops)) {
-        ob->code[ob->size] = OP_SHA256;
-        ob->size++;
-    } else if(!strcmp("abs", ops)) {
-        ob->code[ob->size] = OP_ABS;
-        ob->size++;
-    } else if(!strcmp("min", ops)) {
-        ob->code[ob->size] = OP_MIN;
-        ob->size++;
-    } else if(!strcmp("max", ops)) {
-        ob->code[ob->size] = OP_MAX;
-        ob->size++;
-    } else if(!strcmp("check_tx_sig", ops)) {
-        ob->code[ob->size] = OP_TXSIGHASH;
-        ob->size++;
-
-        ob->code[ob->size] = OP_SWAP;
-        ob->size++;
-
-        ob->code[ob->size] = OP_CHECKSIG;
-        ob->size++;
-    } else if(!strcmp("check_msg_sig", ops)) {
-        ob->code[ob->size] = OP_CHECKSIG;
-        ob->size++;
-    } else if(!strcmp("below", ops)) {
-        ob->code[ob->size] = OP_BLOCKHEIGHT;
-        ob->size++;
-
-        ob->code[ob->size] = OP_GREATERTHAN;
-        ob->size++;
-    } else if(!strcmp("above", ops)) {
-        ob->code[ob->size] = OP_BLOCKHEIGHT;
-        ob->size++;
-
-        ob->code[ob->size] = OP_LESSTHAN;
-        ob->size++;
-    } else if(!strcmp("lock", ops)) {
-        ob->code[ob->size] = OP_CHECKOUTPUT;
-        ob->size++;
-
-        ob->code[ob->size] = OP_VERIFY;
-        ob->size++;
-    } else if(!strcmp("verify", ops)) {
-        ob->code[ob->size] = OP_VERIFY;
+    for(int i = 0; i< op_cnt; i++) {
+        ob->code[ob->size] = ops[i];
         ob->size++;
     }
 }
@@ -478,7 +432,7 @@ generate_function_call_expression(SVM_Executable *exe, Block *block,
                       expr->u.identifier->name,
                       MESSAGE_ARGUMENT_END);
     }
-    generate_builtin_code(ob, builtin_fun->name);
+    generate_builtin_code(ob, builtin_fun->op_codes, builtin_fun->ops_count);
 }
 
 static void
