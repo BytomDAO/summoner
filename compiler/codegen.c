@@ -94,6 +94,30 @@ fix_labels(OpcodeBuf *ob)
     }
 }
 
+static int
+get_label(OpcodeBuf *ob)
+{
+    int ret;
+
+    if (ob->label_table_alloc_size < ob->label_table_size + 1) {
+        ob->label_table = realloc(ob->label_table,
+                                    (ob->label_table_alloc_size
+                                    + LABEL_TABLE_ALLOC_SIZE)
+                                    * sizeof(LabelTable));
+        ob->label_table_alloc_size += LABEL_TABLE_ALLOC_SIZE;
+    }
+    ret = ob->label_table_size;
+    ob->label_table_size++;
+
+    return ret;
+}
+
+static void
+set_label(OpcodeBuf *ob, int label)
+{
+    ob->label_table[label].label_address = ob->size;
+}
+
 static SVM_Byte *
 fix_opcode_buf(OpcodeBuf *ob)
 {
@@ -317,13 +341,42 @@ generate_block_statement(SVM_Executable *exe, Block *current_block,
                          Block *block_stmt,
                          OpcodeBuf *ob)
 {
+    generate_statement_list(exe, current_block, block_stmt->statement_list, ob);
 }
 
 static void
-generate_if_statement(SVM_Executable *exe, Block *current_block,
-                      IfStatement *if_smt,
-                      OpcodeBuf *ob)
+generate_if_statement(SVM_Executable *exe, Block *block,
+                      IfStatement *if_s, OpcodeBuf *ob)
 {
+    int if_false_label;
+    int end_label;
+    Elseif *elseif;
+
+    generate_expression(exe, block, if_s->condition, ob);
+    if_false_label = get_label(ob);
+    generate_code(ob, OP_JUMPIF, if_false_label);
+    // TODO: set JumpTarget
+    generate_statement_list(exe, if_s->then_block,
+                            if_s->then_block->statement_list, ob);
+    end_label = get_label(ob);
+    generate_code(ob, OP_JUMP, end_label);
+    set_label(ob, if_false_label);
+
+    for (elseif = if_s->elseif_list; elseif; elseif = elseif->next) {
+        generate_expression(exe, block, elseif->condition, ob);
+        if_false_label = get_label(ob);
+        generate_code(ob, OP_JUMPIF, if_false_label);
+        generate_statement_list(exe, elseif->block,
+                                elseif->block->statement_list, ob);
+        generate_code(ob, OP_JUMP, end_label);
+        set_label(ob, if_false_label);
+    }
+    if (if_s->else_block) {
+        generate_statement_list(exe, if_s->else_block,
+                                if_s->else_block->statement_list,
+                                ob);
+    }
+    set_label(ob, end_label);
 }
 
 static void
@@ -442,30 +495,6 @@ generate_binary_expression(SVM_Executable *exe, Block *block,
     // offset = get_binary_expression_offset(left, right, code);
 
     generate_code(ob, code);
-}
-
-static int
-get_label(OpcodeBuf *ob)
-{
-    int ret;
-
-    if (ob->label_table_alloc_size < ob->label_table_size + 1) {
-        ob->label_table = realloc(ob->label_table,
-                                    (ob->label_table_alloc_size
-                                    + LABEL_TABLE_ALLOC_SIZE)
-                                    * sizeof(LabelTable));
-        ob->label_table_alloc_size += LABEL_TABLE_ALLOC_SIZE;
-    }
-    ret = ob->label_table_size;
-    ob->label_table_size++;
-
-    return ret;
-}
-
-static void
-set_label(OpcodeBuf *ob, int label)
-{
-    ob->label_table[label].label_address = ob->size;
 }
 
 static void
