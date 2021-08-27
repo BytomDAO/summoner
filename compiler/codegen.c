@@ -1,6 +1,7 @@
 #include "summoner.h"
 #include <stdlib.h>
 #include <string.h>
+#include "error.h"
 #include "../include/SVM_code.h"
 
 extern OpcodeInfo svm_opcode_info[];
@@ -125,6 +126,60 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
         exe->global_variable[i].type = dl->type;
     }
     // TODO: derive type: FUNCTION_DERIVE/ARRAY_DERIVE
+}
+static void
+generate_builtin_code(OpcodeBuf *ob, const char *ops)
+{
+
+    if(!strcmp("sha3", ops)) {
+        ob->code[ob->size] = OP_SHA3;
+        ob->size++;
+    } else if(!strcmp("sha256", ops)) {
+        ob->code[ob->size] = OP_SHA256;
+        ob->size++;
+    } else if(!strcmp("abs", ops)) {
+        ob->code[ob->size] = OP_ABS;
+        ob->size++;
+    } else if(!strcmp("min", ops)) {
+        ob->code[ob->size] = OP_MIN;
+        ob->size++;
+    } else if(!strcmp("max", ops)) {
+        ob->code[ob->size] = OP_MAX;
+        ob->size++;
+    } else if(!strcmp("check_tx_sig", ops)) {
+        ob->code[ob->size] = OP_TXSIGHASH;
+        ob->size++;
+
+        ob->code[ob->size] = OP_SWAP;
+        ob->size++;
+
+        ob->code[ob->size] = OP_CHECKSIG;
+        ob->size++;
+    } else if(!strcmp("check_msg_sig", ops)) {
+        ob->code[ob->size] = OP_CHECKSIG;
+        ob->size++;
+    } else if(!strcmp("below", ops)) {
+        ob->code[ob->size] = OP_BLOCKHEIGHT;
+        ob->size++;
+
+        ob->code[ob->size] = OP_GREATERTHAN;
+        ob->size++;
+    } else if(!strcmp("above", ops)) {
+        ob->code[ob->size] = OP_BLOCKHEIGHT;
+        ob->size++;
+
+        ob->code[ob->size] = OP_LESSTHAN;
+        ob->size++;
+    } else if(!strcmp("lock", ops)) {
+        ob->code[ob->size] = OP_CHECKOUTPUT;
+        ob->size++;
+
+        ob->code[ob->size] = OP_VERIFY;
+        ob->size++;
+    } else if(!strcmp("verify", ops)) {
+        ob->code[ob->size] = OP_VERIFY;
+        ob->size++;
+    }
 }
 
 static void
@@ -331,6 +386,7 @@ generate_initializer(SVM_Executable *exe, Block *current_block,
                      Declaration *decl_stmt,
                      OpcodeBuf *ob)
 {
+    generate_pop_to_identifier(decl_stmt, ob);
 }
 
 static void
@@ -385,6 +441,9 @@ generate_identifier_expression(SVM_Executable *exe, Block *block,
         break;
     case STRUCT_DEFINITION:
         break;
+    case IDENTIFIER_EXPRESSION:
+        generate_pop_to_lvalue(exe, block, expr, ob);
+        break;
     default:
         printf("bad default. kind..%d", expr->kind);
         exit(1);
@@ -409,8 +468,17 @@ generate_function_call_expression(SVM_Executable *exe, Block *block,
     FuncCallExpression *fce = expr->u.func_call_expression;
     generate_push_argument(exe, block, fce->argument_list, ob);
     generate_expression(exe, block, fce->argument_list->expr, ob);
-    // which op for func call?
-    // generate_code(ob, code);
+
+    BuiltinFun *builtin_fun = expr->u.func_call_expression
+                                ->function->u.identifier->u.builtin_func;
+    if (builtin_fun == NULL) {
+        compile_error(expr->line_number,
+                      FUNCTION_NOT_FOUND_ERR,
+                      STRING_MESSAGE_ARGUMENT, "name",
+                      expr->u.identifier->name,
+                      MESSAGE_ARGUMENT_END);
+    }
+    generate_builtin_code(ob, builtin_fun->name);
 }
 
 static void
