@@ -126,6 +126,14 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
     }
     // TODO: derive type: FUNCTION_DERIVE/ARRAY_DERIVE
 }
+static void
+generate_builtin_code(OpcodeBuf *ob, SVM_Opcode *ops, int op_cnt)
+{
+    for(int i = 0; i< op_cnt; i++) {
+        ob->code[ob->size] = ops[i];
+        ob->size++;
+    }
+}
 
 static void
 generate_code(OpcodeBuf *ob, SVM_Opcode code,  ...)
@@ -331,6 +339,7 @@ generate_initializer(SVM_Executable *exe, Block *current_block,
                      Declaration *decl_stmt,
                      OpcodeBuf *ob)
 {
+    generate_pop_to_identifier(decl_stmt, ob);
 }
 
 static void
@@ -385,6 +394,9 @@ generate_identifier_expression(SVM_Executable *exe, Block *block,
         break;
     case STRUCT_DEFINITION:
         break;
+    case IDENTIFIER_EXPRESSION:
+        generate_pop_to_lvalue(exe, block, expr, ob);
+        break;
     default:
         printf("bad default. kind..%d", expr->kind);
         exit(1);
@@ -409,8 +421,10 @@ generate_function_call_expression(SVM_Executable *exe, Block *block,
     FuncCallExpression *fce = expr->u.func_call_expression;
     generate_push_argument(exe, block, fce->argument_list, ob);
     generate_expression(exe, block, fce->argument_list->expr, ob);
-    // which op for func call?
-    // generate_code(ob, code);
+
+    BuiltinFun *builtin_fun = expr->u.func_call_expression
+                                ->function->u.identifier->u.builtin_func;
+    generate_builtin_code(ob, builtin_fun->op_codes, builtin_fun->ops_count);
 }
 
 static void

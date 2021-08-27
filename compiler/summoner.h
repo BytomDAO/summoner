@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <wchar.h>
+#include "../include/SVM_code.h"
 
 typedef enum
 {
@@ -100,7 +101,8 @@ typedef struct BuiltinFun
     BasicType *parameters;
     int parameter_count;
     BasicType return_type;
-    const char *op_codes;
+    SVM_Opcode *op_codes;
+    int ops_count;
 } BuiltinFun;
 
 typedef struct IdentifierExpression
