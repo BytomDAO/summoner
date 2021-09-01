@@ -106,7 +106,19 @@ dump_opcode(int code_size, SVM_Byte *code)
     int index;
 
     for (index = 0; index < code_size; ) {
-        index = svm_dump_instruction(stdout, code, index);
+        if (code[index] >= OP_DATA_1 && code[index] <= OP_DATA_75) {
+            index = svm_dump_instruction(stdout, code, index);
+            printf("\n");
+
+            fprintf(stdout, "%4d ", index);
+            int len = code[index-1] - OP_DATA_1 + 1;
+            for (int i = 0; i < len; i++) {
+                fprintf(stdout, "%c", code[index + i]);
+            }
+            index += len;   
+        } else {
+            index = svm_dump_instruction(stdout, code, index);
+        }
         printf("\n");
     }
 }

@@ -76,21 +76,6 @@ fix_labels(OpcodeBuf *ob)
             ob->code[i+1] = (SVM_Byte)(address >> 8);
             ob->code[i+2] = (SVM_Byte)(address &0xff);
         }
-        info = &svm_opcode_info[ob->code[i]];
-        for (j = 0; info->parameter[j] != '\0'; j++) {
-            switch (info->parameter[j]) {
-            case 'b':
-                i++;
-                break;
-            case 's':
-            case 'p':
-                i += 2;
-                break;
-            default:
-                printf("param..%s, j..%d", info->parameter, j);
-                exit(1);
-            }
-        }
     }
 }
 
@@ -123,7 +108,7 @@ fix_opcode_buf(OpcodeBuf *ob)
 {
     SVM_Byte *ret;
 
-    fix_labels(ob);
+    // fix_labels(ob);
     ret = realloc(ob->code, ob->size);
     free(ob->label_table);
 
@@ -397,9 +382,17 @@ generate_string_expression(SVM_Executable *cf, Expression *expr,
 {
     char *str =  expr->u.str_value;
     int len = strlen(str);
+    if (ob->alloc_size < ob->size + 1 + len) {
+        ob->code = realloc(ob->code, ob->alloc_size + OPCODE_ALLOC_SIZE);
+        ob->alloc_size += OPCODE_ALLOC_SIZE;
+    }
+
     generate_code(ob, OP_DATA_1 + len - 1);
-    strcpy(ob->code[ob->size], str);
-    ob->size += len;
+    
+    for (int i = 0; i < len; i++) {
+        ob->code[ob->size] = str[i];
+        ob->size++;
+    }
 }
 
 // NOTE: no bvm ops for double type
