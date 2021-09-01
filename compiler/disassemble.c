@@ -95,23 +95,6 @@ svm_dump_instruction(FILE *fp, SVM_Byte *code, int index)
 
     info = &svm_opcode_info[code[index]];
     fprintf(fp, "%4d %s ", index, info->mnemonic);
-    for (i = 0; info->parameter[i] != '\0'; i++) {
-        switch (info->parameter[i]) {
-        case 'b':
-            value = code[index+1];
-            fprintf(fp, " %d", value);
-            index++;
-            break;
-        case 's': 
-        case 'p':
-            value = (code[index+1] << 8) + code[index+2];
-            fprintf(fp, " %d", value);
-            index += 2;
-            break;
-        default:
-            DBG_assert(0, ("param..%s, i..%d", info->parameter, i));
-        }
-    }
     index++;
 
     return index;

@@ -162,13 +162,9 @@ generate_builtin_code(OpcodeBuf *ob, SVM_Opcode *ops, int op_cnt)
 static void
 generate_code(OpcodeBuf *ob, SVM_Opcode code,  ...)
 {
-    va_list     ap;
     int         i;
     char        *param;
     int         param_count;
-    int         start_pc;
-
-    va_start(ap, code);
 
     param = svm_opcode_info[(int)code].parameter;
     param_count = strlen(param);
@@ -177,33 +173,8 @@ generate_code(OpcodeBuf *ob, SVM_Opcode code,  ...)
         ob->alloc_size += OPCODE_ALLOC_SIZE;
     }
 
-    start_pc = ob->size;
     ob->code[ob->size] = code;
     ob->size++;
-    for (i = 0; param[i] != '\0'; i++) {
-        unsigned int value = va_arg(ap, int);
-        switch (param[i]) {
-        case 'b': /* byte */
-            ob->code[ob->size] = (SVM_Byte)value;
-            ob->size++;
-            break;
-        case 's': /* short(2byte int) */
-            ob->code[ob->size] = (SVM_Byte)(value >> 8);
-            ob->code[ob->size+1] = (SVM_Byte)(value & 0xff);
-            ob->size += 2;
-            break;
-        case 'p': /* constant pool index */
-            ob->code[ob->size] = (SVM_Byte)(value >> 8);
-            ob->code[ob->size+1] = (SVM_Byte)(value & 0xff);
-            ob->size += 2;
-            break;
-        default:
-            printf("param..%s, i..%d", param, i);
-            exit(1);
-        }
-    }
-
-    va_end(ap);
 }
 
 static void
@@ -392,6 +363,7 @@ generate_initializer(SVM_Executable *exe, Block *current_block,
                      Declaration *decl_stmt,
                      OpcodeBuf *ob)
 {
+    generate_expression(exe, current_block, decl_stmt->initializer, ob);
     generate_pop_to_identifier(decl_stmt, ob);
 }
 
@@ -417,6 +389,17 @@ generate_int_expression(SVM_Executable *cf, int value,
     } else {
     // TODO: add constpool
     }
+}
+
+static void
+generate_string_expression(SVM_Executable *cf, Expression *expr,
+                        OpcodeBuf *ob)
+{
+    char *str =  expr->u.str_value;
+    int len = strlen(str);
+    generate_code(ob, OP_DATA_1 + len - 1);
+    strcpy(ob->code[ob->size], str);
+    ob->size += len;
 }
 
 // NOTE: no bvm ops for double type
@@ -458,12 +441,20 @@ generate_identifier_expression(SVM_Executable *exe, Block *block,
 
 static void
 generate_push_argument(SVM_Executable *exe, Block *block,
-                       ArgumentList *arg_list, OpcodeBuf *ob)
+                       ArgumentList *arg_list, const char *name, OpcodeBuf *ob)
 {
     ArgumentList *arg_pos;
 
     for (arg_pos = arg_list; arg_pos; arg_pos = arg_pos->next) {
+        if (!strcmp(name, "lock") && arg_pos->expr->type->basic_type == AMOUNT_TYPE) {
+            generate_code(ob, OP_0);
+        }
+
         generate_expression(exe, block, arg_pos->expr, ob);
+
+        if (!strcmp(name, "lock") && arg_pos->expr->type->basic_type == ASSET_TYPE) {
+            generate_code(ob, OP_1);
+        }
     }
 }
 
@@ -472,11 +463,11 @@ generate_function_call_expression(SVM_Executable *exe, Block *block,
                                   Expression *expr, OpcodeBuf *ob)
 {
     FuncCallExpression *fce = expr->u.func_call_expression;
-    generate_push_argument(exe, block, fce->argument_list, ob);
-    generate_expression(exe, block, fce->argument_list->expr, ob);
-
     BuiltinFun *builtin_fun = expr->u.func_call_expression
                                 ->function->u.identifier->u.builtin_func;
+    generate_push_argument(exe, block, fce->argument_list, builtin_fun->name, ob);
+    generate_expression(exe, block, fce->argument_list->expr, ob);
+
     generate_builtin_code(ob, builtin_fun->op_codes, builtin_fun->ops_count);
 }
 
@@ -528,6 +519,9 @@ generate_expression(SVM_Executable *exe, Block *current_block,
         break;
     case DOUBLE_EXPRESSION:
         generate_double_expression(exe, expr, ob);
+        break;
+    case STRING_EXPRESSION:
+        generate_string_expression(exe, expr, ob);
         break;
     case IDENTIFIER_EXPRESSION:
         generate_identifier_expression(exe, current_block,
@@ -623,8 +617,10 @@ generate_statement_list(SVM_Executable *exe, Block *current_block,
         {
         case ASSIGN_STATEMENT:
             generate_assign_statement(exe, current_block, pos->statement->u.assign_s, ob);
+            break;
         case BLOCK_STATEMENT:
             generate_block_statement(exe, current_block, pos->statement->u.block_s, ob);
+            break;
         case IF_STATEMENT:
             generate_if_statement(exe, current_block, pos->statement->u.if_s, ob);
             break;
