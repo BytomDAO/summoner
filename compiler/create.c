@@ -100,7 +100,11 @@ ArgumentList *chain_argument_list(ArgumentList *list, Expression *expr)
         return next;
     }
 
-    list->next = next;
+    ArgumentList *pos;
+    for (pos = list; pos->next; pos = pos->next)
+        ;
+
+    pos->next = next;
     return list;
 }
 
