@@ -501,6 +501,35 @@ fix_type_cast_expression(Block *current_block, Expression *expr)
 }
 
 static void
+implicit_type_cast(Expression *expr, TypeSpecifier *type)
+{
+    if (expr->kind == INT_EXPRESSION && type->basic_type == DOUBLE_TYPE)
+    {
+        expr->kind = DOUBLE_EXPRESSION;
+        expr->type->basic_type = DOUBLE_TYPE;
+        expr->u.double_value = expr->u.int_value;
+    }
+    else if (expr->kind == INT_EXPRESSION && type->basic_type == AMOUNT_TYPE)
+    {
+        expr->type->basic_type = AMOUNT_TYPE;
+    }
+    else if (expr->kind == STRING_EXPRESSION &&
+             (type->basic_type == ASSET_TYPE || type->basic_type == HASH_TYPE ||
+              type->basic_type == PUBKEY_TYPE || type->basic_type == SIG_TYPE ||
+              type->basic_type == HEX_TYPE))
+    {
+        expr->type->basic_type = type->basic_type;
+    }
+    else
+    {
+        compile_error(expr->line_number,
+                      TYPE_CAST_MISMATCH_ERR,
+                      MESSAGE_ARGUMENT_END);
+    }
+}
+
+
+static void
 check_argument(Block *current_block, int line_number,
                ParameterList *param_list, ArgumentList *arg)
 {
@@ -514,9 +543,7 @@ check_argument(Block *current_block, int line_number,
         arg->expr = fix_expression(current_block, arg->expr);
         if (param->type->basic_type != arg->expr->type->basic_type)
         {
-            compile_error(line_number,
-                          FUNCTION_CALL_TYPE_MISMATCH_ERR,
-                          MESSAGE_ARGUMENT_END);
+            implicit_type_cast(arg->expr, param->type);
         }
     }
 
@@ -732,34 +759,6 @@ fix_return_statement(Block *current_block, Statement *statement, FuncDefinition 
     }
 
     statement->u.expr_s = return_value;
-}
-
-static void
-implicit_type_cast(Expression *expr, TypeSpecifier *type)
-{
-    if (expr->kind == INT_EXPRESSION && type->basic_type == DOUBLE_TYPE)
-    {
-        expr->kind = DOUBLE_EXPRESSION;
-        expr->type->basic_type = DOUBLE_TYPE;
-        expr->u.double_value = expr->u.int_value;
-    }
-    else if (expr->kind == INT_EXPRESSION && type->basic_type == AMOUNT_TYPE)
-    {
-        expr->type->basic_type = AMOUNT_TYPE;
-    }
-    else if (expr->kind == STRING_EXPRESSION &&
-             (type->basic_type == ASSET_TYPE || type->basic_type == HASH_TYPE ||
-              type->basic_type == PUBKEY_TYPE || type->basic_type == SIG_TYPE ||
-              type->basic_type == HEX_TYPE))
-    {
-        expr->type->basic_type = type->basic_type;
-    }
-    else
-    {
-        compile_error(expr->line_number,
-                      TYPE_CAST_MISMATCH_ERR,
-                      MESSAGE_ARGUMENT_END);
-    }
 }
 
 static void
