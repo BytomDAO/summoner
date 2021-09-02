@@ -172,8 +172,8 @@ type_specifier:
     ;
 
 block:
-      '{' new_line_opt stmt_list new_line_opt      { $<block>$ = open_block(); }
-                                              '}'  { $$ = close_block($<block>5, $3); }
+      '{' new_line_opt                             { $<block>$ = open_block(); }
+                      stmt_list new_line_opt  '}'  { $$ = close_block($<block>3, $4); }
     | '{' new_line_opt '}'                         { $<block>$ = alloc_block(NULL); }
     ;
 
