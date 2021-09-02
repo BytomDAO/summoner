@@ -139,9 +139,9 @@ eval_math_expression(Block *current_block, Expression *expr)
     {
         expr = eval_math_expression_int(expr,
                                         expr->u.binary_expression->left
-                                            ->u.int_value,
+                                                ->u.int_value,
                                         expr->u.binary_expression->right
-                                            ->u.int_value);
+                                                ->u.int_value);
     }
     else if ((left_kind == DOUBLE_EXPRESSION && right_kind == DOUBLE_EXPRESSION) ||
              (left_kind == DOUBLE_EXPRESSION && right_kind == INT_EXPRESSION) ||
@@ -347,33 +347,33 @@ eval_compare_expression(Expression *expr)
     {
         expr = eval_compare_expression_boolean(expr,
                                                expr->u.binary_expression->left
-                                                   ->u.boolean_value,
+                                                       ->u.boolean_value,
                                                expr->u.binary_expression->right
-                                                   ->u.boolean_value);
+                                                       ->u.boolean_value);
     }
     else if (expr->u.binary_expression->left->kind == INT_EXPRESSION && expr->u.binary_expression->right->kind == INT_EXPRESSION)
     {
         expr = eval_compare_expression_int(expr,
                                            expr->u.binary_expression->left
-                                               ->u.int_value,
+                                                   ->u.int_value,
                                            expr->u.binary_expression->right
-                                               ->u.int_value);
+                                                   ->u.int_value);
     }
     else if (expr->u.binary_expression->left->kind == DOUBLE_EXPRESSION && expr->u.binary_expression->right->kind == DOUBLE_EXPRESSION)
     {
         expr = eval_compare_expression_double(expr,
                                               expr->u.binary_expression->left
-                                                  ->u.double_value,
+                                                      ->u.double_value,
                                               expr->u.binary_expression->right
-                                                  ->u.double_value);
+                                                      ->u.double_value);
     }
     else if (expr->u.binary_expression->left->kind == STRING_EXPRESSION && expr->u.binary_expression->right->kind == STRING_EXPRESSION)
     {
         expr = eval_compare_expression_string(expr,
                                               expr->u.binary_expression->left
-                                                  ->u.str_value,
+                                                      ->u.str_value,
                                               expr->u.binary_expression->right
-                                                  ->u.str_value);
+                                                      ->u.str_value);
     }
     return expr;
 }
@@ -596,20 +596,20 @@ static Expression *init_expression(BasicType basic_type)
 {
     switch (basic_type)
     {
-    case AMOUNT_TYPE:
-    case INT_TYPE:
-        return alloc_int_expression(0);
-    case DOUBLE_TYPE:
-        return alloc_double_expression(0);
-    case STRING_TYPE:
-    case ASSET_TYPE:
-    case HASH_TYPE:
-    case PUBKEY_TYPE:
-    case SIG_TYPE:
-    case HEX_TYPE:
-        return alloc_string_expression("");
-    default:
-        DBG_assert(0, ("bad case. type..%d\n", basic_type));
+        case AMOUNT_TYPE:
+        case INT_TYPE:
+            return alloc_int_expression(0);
+        case DOUBLE_TYPE:
+            return alloc_double_expression(0);
+        case STRING_TYPE:
+        case ASSET_TYPE:
+        case HASH_TYPE:
+        case PUBKEY_TYPE:
+        case SIG_TYPE:
+        case HEX_TYPE:
+            return alloc_string_expression("");
+        default:
+            DBG_assert(0, ("bad case. type..%d\n", basic_type));
     }
     return NULL;
 }
@@ -622,54 +622,54 @@ fix_expression(Block *current_block, Expression *expr)
 
     switch (expr->kind)
     {
-    case BOOL_EXPRESSION:
-        expr->type = alloc_type_specifier(BOOLEAN_TYPE);
-        break;
-    case INT_EXPRESSION:
-        expr->type = alloc_type_specifier(INT_TYPE);
-        break;
-    case DOUBLE_EXPRESSION:
-        expr->type = alloc_type_specifier(DOUBLE_TYPE);
-        break;
-    case STRING_EXPRESSION:
-        expr->type = alloc_type_specifier(STRING_TYPE);
-        break;
-    case IDENTIFIER_EXPRESSION:
-        expr = fix_identifier_expression(current_block, expr);
-        break;
-    case ADD_EXPRESSION: /* FALLTHRU */
-    case SUB_EXPRESSION: /* FALLTHRU */
-    case MUL_EXPRESSION: /* FALLTHRU */
-    case DIV_EXPRESSION: /* FALLTHRU */
-    case MOD_EXPRESSION:
-        expr = fix_math_binary_expression(current_block, expr);
-        break;
-    case EQ_EXPRESSION: /* FALLTHRU */
-    case NE_EXPRESSION: /* FALLTHRU */
-    case GT_EXPRESSION: /* FALLTHRU */
-    case GE_EXPRESSION: /* FALLTHRU */
-    case LT_EXPRESSION: /* FALLTHRU */
-    case LE_EXPRESSION:
-        expr = fix_compare_expression(current_block, expr);
-        break;
-    case AND_EXPRESSION: /* FALLTHRU */
-    case OR_EXPRESSION:
-        expr = fix_logical_and_or_expression(current_block, expr);
-        break;
-    case MINUS_EXPRESSION:
-        expr = fix_minus_expression(current_block, expr);
-        break;
-    case NOT_EXPRESSION:
-        expr = fix_logical_not_expression(current_block, expr);
-        break;
-    case TYPE_CAST_EXPRESSION:
-        expr = fix_type_cast_expression(current_block, expr);
-        break;
-    case FUNC_CALL_EXPRESSION:
-        expr = fix_function_call_expression(current_block, expr);
-        break;
-    default:
-        DBG_assert(0, ("bad case. kind..%d\n", expr->kind));
+        case BOOL_EXPRESSION:
+            expr->type = alloc_type_specifier(BOOLEAN_TYPE);
+            break;
+        case INT_EXPRESSION:
+            expr->type = alloc_type_specifier(INT_TYPE);
+            break;
+        case DOUBLE_EXPRESSION:
+            expr->type = alloc_type_specifier(DOUBLE_TYPE);
+            break;
+        case STRING_EXPRESSION:
+            expr->type = alloc_type_specifier(STRING_TYPE);
+            break;
+        case IDENTIFIER_EXPRESSION:
+            expr = fix_identifier_expression(current_block, expr);
+            break;
+        case ADD_EXPRESSION: /* FALLTHRU */
+        case SUB_EXPRESSION: /* FALLTHRU */
+        case MUL_EXPRESSION: /* FALLTHRU */
+        case DIV_EXPRESSION: /* FALLTHRU */
+        case MOD_EXPRESSION:
+            expr = fix_math_binary_expression(current_block, expr);
+            break;
+        case EQ_EXPRESSION: /* FALLTHRU */
+        case NE_EXPRESSION: /* FALLTHRU */
+        case GT_EXPRESSION: /* FALLTHRU */
+        case GE_EXPRESSION: /* FALLTHRU */
+        case LT_EXPRESSION: /* FALLTHRU */
+        case LE_EXPRESSION:
+            expr = fix_compare_expression(current_block, expr);
+            break;
+        case AND_EXPRESSION: /* FALLTHRU */
+        case OR_EXPRESSION:
+            expr = fix_logical_and_or_expression(current_block, expr);
+            break;
+        case MINUS_EXPRESSION:
+            expr = fix_minus_expression(current_block, expr);
+            break;
+        case NOT_EXPRESSION:
+            expr = fix_logical_not_expression(current_block, expr);
+            break;
+        case TYPE_CAST_EXPRESSION:
+            expr = fix_type_cast_expression(current_block, expr);
+            break;
+        case FUNC_CALL_EXPRESSION:
+            expr = fix_function_call_expression(current_block, expr);
+            break;
+        default:
+            DBG_assert(0, ("bad case. kind..%d\n", expr->kind));
     }
     return expr;
 }
@@ -813,23 +813,26 @@ fix_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
 {
     switch (statement->kind)
     {
-    case IF_STATEMENT:
-        fix_if_statement(current_block, statement->u.if_s, fd);
-        break;
-    case RETURN_STATEMENT:
-        fix_return_statement(current_block, statement, fd);
-        break;
-    case DECLARATION_STATEMENT:
-        fix_declaration_stmt(current_block, statement, fd);
-        break;
-    case ASSIGN_STATEMENT:
-        fix_assign_stmt(current_block, statement);
-        break;
-    case EXPRESSION_STATEMENT:
-        fix_expression_stmt(current_block, statement);
-        break;
-    default:
-        DBG_assert(0, ("bad case. kind..%d\n", statement->kind));
+        case IF_STATEMENT:
+            fix_if_statement(current_block, statement->u.if_s, fd);
+            break;
+        case RETURN_STATEMENT:
+            fix_return_statement(current_block, statement, fd);
+            break;
+        case DECLARATION_STATEMENT:
+            fix_declaration_stmt(current_block, statement, fd);
+            break;
+        case ASSIGN_STATEMENT:
+            fix_assign_stmt(current_block, statement);
+            break;
+        case EXPRESSION_STATEMENT:
+            fix_expression_stmt(current_block, statement);
+            break;
+        case BLOCK_STATEMENT:
+            fix_statement_list(statement->u.block_s, statement->u.block_s->statement_list, NULL);
+            break;
+        default:
+            DBG_assert(0, ("bad case. kind..%d\n", statement->kind));
     }
 }
 
@@ -867,7 +870,7 @@ reserve_function_index(Compiler *compiler, FuncDefinition *src)
     SVM_Function *dest;
 
     compiler->svm_function
-        = realloc(compiler->svm_function,
+            = realloc(compiler->svm_function,
                       sizeof(SVM_Function) * (compiler->svm_function_count+1));
     dest = &compiler->svm_function[compiler->svm_function_count];
     compiler->svm_function_count++;
@@ -890,7 +893,7 @@ void fix_tree(Compiler *compiler)
 {
     FuncDefinition *func_pos;
 
-   for (func_pos = compiler->func_definition_list; func_pos;
+    for (func_pos = compiler->func_definition_list; func_pos;
          func_pos = func_pos->next) {
         reserve_function_index(compiler, func_pos);
     }
