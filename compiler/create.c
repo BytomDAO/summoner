@@ -233,16 +233,13 @@ Block *open_block()
     Block *new_block;
     Compiler *compiler = get_current_compiler();
     new_block = alloc_block(NULL);
-    printf("open:%p\n", new_block);
     new_block->outer_block = compiler->current_block;
-//    printf("open out:%p\n", compiler->current_block);
     compiler->current_block = new_block;
     return new_block;
 }
 
 Block *close_block(Block *block, StatementList *stmt_list)
 {
-    printf("close:%p\n", block);
     Compiler *compiler = get_current_compiler();
     block->statement_list = stmt_list;
     compiler->current_block = block->outer_block;
