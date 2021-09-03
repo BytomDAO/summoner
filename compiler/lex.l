@@ -77,8 +77,8 @@ void lex_err(char *str) {
 "break"    return BREAK;
 "continue" return CONTINUE;
 "bool"     return BOOL_T;
-"int"      return INT_T;
-"double"   return DOUBLE_T;
+"int64"    return INT_T;
+"float64"  return DOUBLE_T;
 "string"   return STRING_T;
 "asset"    return ASSET_T;
 "hash"     return HASH_T;
@@ -104,8 +104,8 @@ void lex_err(char *str) {
 }
 
 ([1-9][0-9]*)|0 {
-    int val;
-    sscanf(yytext, "%d", &val);
+    int64_t val;
+    sscanf(yytext, "%lld", &val);
     yylval.int_value = val;
     return INT_LITERAL;
 }

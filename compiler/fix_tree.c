@@ -43,7 +43,7 @@ fix_identifier_expression(Block *current_block, Expression *expr)
 }
 
 static Expression *
-eval_math_expression_int(Expression *expr, int left, int right)
+eval_math_expression_int(Expression *expr, int64_t left, int64_t right)
 {
     if (expr->kind == ADD_EXPRESSION)
     {
@@ -488,7 +488,7 @@ fix_type_cast_expression(Block *current_block, Expression *expr)
         if (expr->u.unary_expression->kind == DOUBLE_EXPRESSION)
         {
             expr->kind = INT_EXPRESSION;
-            expr->u.int_value = (int)expr->u.unary_expression->u.double_value;
+            expr->u.int_value = (int64_t)expr->u.unary_expression->u.double_value;
         }
     }
     else
