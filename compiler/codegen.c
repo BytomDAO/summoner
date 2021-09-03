@@ -69,12 +69,19 @@ fix_labels(OpcodeBuf *ob)
     int address;
 
     for (i = 0; i < ob->size; i++) {
+        // ignore stack data
+        if (ob->code[i] >= OP_DATA_1 && ob->code[i] <= OP_DATA_75) {
+            int len = ob->code[i] - OP_DATA_1 + 1;
+            i += len;
+            continue;
+        }
+
+        // fix jump table label
         if (ob->code[i] == OP_JUMP
             || ob->code[i] == OP_JUMPIF) {
-            label = (ob->code[i+1] << 8) + (ob->code[i+2]);
+            label = ob->code[i+1];
             address = ob->label_table[label].label_address;
-            ob->code[i+1] = (SVM_Byte)(address >> 8);
-            ob->code[i+2] = (SVM_Byte)(address &0xff);
+            ob->code[i+1] = (SVM_Byte)address;
         }
     }
 }
@@ -108,7 +115,7 @@ fix_opcode_buf(OpcodeBuf *ob)
 {
     SVM_Byte *ret;
 
-    // fix_labels(ob);
+    fix_labels(ob);
     ret = realloc(ob->code, ob->size);
     free(ob->label_table);
 
@@ -300,6 +307,17 @@ generate_block_statement(SVM_Executable *exe, Block *current_block,
     generate_statement_list(exe, current_block, block_stmt->statement_list, ob);
 }
 
+/*
+1) if_s->condition expr
+2) IF_FALSE op, label_address op
+2) label OP_JUMP
+3) if_s->then_block->statement_list expr
+4) OP_JUMP op, label_address op
+5) set fasle label
+6) forloop if_s->elsif_list repeat 1) - 5)
+7) else_block->statement_list expr
+8) set end label
+*/
 static void
 generate_if_statement(SVM_Executable *exe, Block *block,
                       IfStatement *if_s, OpcodeBuf *ob)
@@ -309,22 +327,33 @@ generate_if_statement(SVM_Executable *exe, Block *block,
     Elseif *elseif;
 
     generate_expression(exe, block, if_s->condition, ob);
+
     if_false_label = get_label(ob);
-    generate_code(ob, OP_JUMPIF, if_false_label);
-    // TODO: set JumpTarget
+    generate_code(ob, OP_NOT);
+    generate_code(ob, OP_JUMPIF);
+    generate_code(ob, if_false_label);
+
     generate_statement_list(exe, if_s->then_block,
                             if_s->then_block->statement_list, ob);
+
     end_label = get_label(ob);
-    generate_code(ob, OP_JUMP, end_label);
+    generate_code(ob, OP_JUMP);
+    generate_code(ob, end_label);
     set_label(ob, if_false_label);
 
     for (elseif = if_s->elseif_list; elseif; elseif = elseif->next) {
         generate_expression(exe, block, elseif->condition, ob);
+
         if_false_label = get_label(ob);
-        generate_code(ob, OP_JUMPIF, if_false_label);
+        generate_code(ob, OP_NOT);
+        generate_code(ob, OP_JUMPIF);
+        generate_code(ob, if_false_label);
+
         generate_statement_list(exe, elseif->block,
                                 elseif->block->statement_list, ob);
-        generate_code(ob, OP_JUMP, end_label);
+
+        generate_code(ob, end_label);  
+        generate_code(ob, OP_JUMP);
         set_label(ob, if_false_label);
     }
     if (if_s->else_block) {
