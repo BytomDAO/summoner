@@ -61,7 +61,7 @@ typedef struct Expression
     union
     {
         bool boolean_value;
-        int int_value;
+        int64_t int_value;
         double double_value;
         char *str_value;
         struct BinaryExpression *binary_expression;

@@ -104,8 +104,8 @@ void lex_err(char *str) {
 }
 
 ([1-9][0-9]*)|0 {
-    int val;
-    sscanf(yytext, "%d", &val);
+    int64_t val;
+    sscanf(yytext, "%lld", &val);
     yylval.int_value = val;
     return INT_LITERAL;
 }
