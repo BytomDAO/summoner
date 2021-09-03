@@ -78,7 +78,7 @@ void lex_err(char *str) {
 "continue" return CONTINUE;
 "bool"     return BOOL_T;
 "int"      return INT_T;
-"double"   return DOUBLE_T;
+"float64"   return DOUBLE_T;
 "string"   return STRING_T;
 "asset"    return ASSET_T;
 "hash"     return HASH_T;
