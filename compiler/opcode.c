@@ -185,5 +185,8 @@ OpcodeInfo svm_opcode_info[] = {
     [OP_INDEX] = {"INDEX", "b", 1},
     [OP_ENTRYID] = {"ENTRYID", "b", 1},
     [OP_OUTPUTID] = {"OUTPUTID", "b", 1},
-    [OP_BLOCKHEIGHT] = {"BLOCKHEIGHT", "b", 1}
+    [OP_BLOCKHEIGHT] = {"BLOCKHEIGHT", "b", 1},
+
+    [OP_DATA_INT] = {"DATA_4", "a", 2},
+    [OP_DATA_INT64] = {"DATA_8", "a", 2},
 };

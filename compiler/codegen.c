@@ -393,15 +393,26 @@ generate_boolean_expression(SVM_Executable *cf, Expression *expr,
 }
 
 static void
-generate_int_expression(SVM_Executable *cf, int value,
+generate_immediate_code(OpcodeBuf *ob, int64_t value, int size)
+{
+    generate_code(ob, size == 4 ? OP_DATA_INT : OP_DATA_INT64);
+
+    for(int i = 0; i < size; i++) {
+        int shift = 8 * (size - (i + 1));
+        ob->code[ob->size++] = (SVM_Byte)((value & (0xff << shift)) >> shift);
+    }
+}
+
+static void
+generate_int_expression(SVM_Executable *cf, int64_t value,
                         OpcodeBuf *ob)
 {
     if (value > 0 && value < 16) {
         generate_code(ob, OP_1 + value - 1, value);
-    } else if (value >= 0 && value < 65536) {
-        generate_code(ob, OP_PUSHDATA2, value);
+    } else if (value < 2147483648) {
+        generate_immediate_code(ob, value, 4);
     } else {
-    // TODO: add constpool
+        generate_immediate_code(ob, value, 8);
     }
 }
 

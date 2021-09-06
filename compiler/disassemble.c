@@ -100,6 +100,25 @@ svm_dump_instruction(FILE *fp, SVM_Byte *code, int index)
     return index;
 }
 
+int dump_immediate(FILE *fp, SVM_Byte *code, int index, int size)
+{
+    code[index] = size == 4 ? OP_DATA_4 : OP_DATA_8;
+    index = svm_dump_instruction(stdout, code, index);
+    printf("\n");
+
+    fprintf(stdout, "%4d ", index);
+    long long  data[size];
+    long long imm = 0;
+    for (int i = 0; i < size; i++) {
+        data[i] = (long long) code[index + i];
+        int shift = 8 * (size - (i + 1));
+        imm  += (data[i] << shift);
+    }
+    fprintf(stdout, "%lld", imm);
+
+    return index + size;
+}
+
 static void
 dump_opcode(int code_size, SVM_Byte *code)
 {
@@ -116,7 +135,12 @@ dump_opcode(int code_size, SVM_Byte *code)
                 fprintf(stdout, "%c", code[index + i]);
             }
             index += len;   
-        } else {
+        } else if (code[index] == OP_DATA_INT) {  // adjust pseudo int op
+            index = dump_immediate(stdout, code, index, 4);
+        } else if (code[index] == OP_DATA_INT64) {  // adjust pseudo int64 op
+            index = dump_immediate(stdout, code, index, 8);
+        }
+        else {
             index = svm_dump_instruction(stdout, code, index);
         }
         printf("\n");
