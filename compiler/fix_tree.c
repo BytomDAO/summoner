@@ -225,7 +225,7 @@ eval_compare_expression_boolean(Expression *expr,
 }
 
 static Expression *
-eval_compare_expression_int(Expression *expr, int left, int right)
+eval_compare_expression_int(Expression *expr, int64_t left, int64_t right)
 {
     if (expr->kind == EQ_EXPRESSION)
     {

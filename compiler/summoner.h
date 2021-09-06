@@ -117,7 +117,7 @@ typedef struct IdentifierExpression
 } IdentifierExpression;
 
 Expression *alloc_expression(ExpressionKind kind);
-Expression *alloc_int_expression(int value);
+Expression *alloc_int_expression(int64_t value);
 Expression *alloc_double_expression(double value);
 Expression *alloc_bool_expression(bool value);
 Expression *alloc_string_expression(char *value);

@@ -398,8 +398,8 @@ generate_immediate_code(OpcodeBuf *ob, int64_t value, int size)
     generate_code(ob, size == 4 ? OP_DATA_INT : OP_DATA_INT64);
 
     for(int i = 0; i < size; i++) {
-        int shift = 8 * (size - (i + 1));
-        ob->code[ob->size++] = (SVM_Byte)((value & (0xff << shift)) >> shift);
+        int64_t shift = 8 * (size - (i + 1));
+        ob->code[ob->size++] = (SVM_Byte)((value & ((int64_t) 0xff << shift)) >> shift);
     }
 }
 

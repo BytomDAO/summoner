@@ -107,11 +107,11 @@ int dump_immediate(FILE *fp, SVM_Byte *code, int index, int size)
     printf("\n");
 
     fprintf(stdout, "%4d ", index);
-    long long  data[size];
-    long long imm = 0;
+    int64_t  data[size];
+    int64_t imm = 0;
     for (int i = 0; i < size; i++) {
-        data[i] = (long long) code[index + i];
-        int shift = 8 * (size - (i + 1));
+        data[i] = (int64_t) code[index + i];
+        int64_t shift = 8 * (size - (i + 1));
         imm  += (data[i] << shift);
     }
     fprintf(stdout, "%lld", imm);
