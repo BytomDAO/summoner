@@ -11,7 +11,7 @@ int yyerror(const char *s);
     char *                  identifier;
     char *                  str_value;
     double                  double_value;
-    int                     int_value;
+    int64_t                 int_value;
     struct Expression *     expression;
     struct Declaration *    declaration;
     struct Statement *      statement;

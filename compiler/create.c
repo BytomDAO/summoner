@@ -16,7 +16,7 @@ Expression *alloc_expression(ExpressionKind kind)
     return expr;
 }
 
-Expression *alloc_int_expression(int value)
+Expression *alloc_int_expression(int64_t value)
 {
     Expression *expr = alloc_expression(INT_EXPRESSION);
     expr->u.int_value = value;

@@ -201,7 +201,9 @@ typedef enum {
 	OP_BLOCKHEIGHT  = 0xcd,
     
     // pseudo
-    OP_INVOKE    = 0xd0
+    OP_INVOKE    = 0xd0,
+    OP_DATA_INT  = 0xd1,
+    OP_DATA_INT64  = 0xd2
 }SVM_Opcode;
 
 typedef struct {
