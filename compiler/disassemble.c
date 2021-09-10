@@ -102,7 +102,7 @@ svm_dump_instruction(FILE *fp, SVM_Byte *code, int index)
 
 int dump_immediate(FILE *fp, SVM_Byte *code, int index, int size)
 {
-    code[index] = size == 4 ? OP_DATA_4 : OP_DATA_8;
+    code[index] = size == sizeof(int) ? OP_DATA_4 : OP_DATA_8;
     index = svm_dump_instruction(stdout, code, index);
     printf("\n");
 
@@ -111,12 +111,27 @@ int dump_immediate(FILE *fp, SVM_Byte *code, int index, int size)
     int64_t imm = 0;
     for (int i = 0; i < size; i++) {
         data[i] = (int64_t) code[index + i];
-        int64_t shift = 8 * (size - (i + 1));
+        int64_t shift = SHIFT_SIZE * (size - (i + 1));
         imm  += (data[i] << shift);
     }
     fprintf(stdout, "%lld", imm);
 
     return index + size;
+}
+
+int dump_jump_target(FILE *fp, SVM_Byte *code, int index)
+{
+    fprintf(stdout, "%4d ", index);
+    int64_t  data[JUMP_TARGET_SIZE];
+    int64_t imm = 0;
+    for (int i = 0; i < JUMP_TARGET_SIZE; i++) {
+        data[i] = (int64_t) code[index + i];
+        int64_t shift = SHIFT_SIZE * (JUMP_TARGET_SIZE - (i + 1));
+        imm  += (data[i] << shift);
+    }
+    fprintf(stdout, "%lld", imm);
+
+    return index + JUMP_TARGET_SIZE;
 }
 
 static void
@@ -136,15 +151,28 @@ dump_opcode(int code_size, SVM_Byte *code)
             }
             index += len;   
         } else if (code[index] == OP_DATA_INT) {  // adjust pseudo int op
-            index = dump_immediate(stdout, code, index, 4);
+            index = dump_immediate(stdout, code, index, sizeof(int));
         } else if (code[index] == OP_DATA_INT64) {  // adjust pseudo int64 op
-            index = dump_immediate(stdout, code, index, 8);
-        }
-        else {
+            index = dump_immediate(stdout, code, index, sizeof(int64_t));
+        } else if (code[index] == OP_JUMP || code[index] == OP_JUMPIF) {
+            index = svm_dump_instruction(stdout, code, index);
+            printf("\n");
+            index = dump_jump_target(stdout, code, index);
+        } else {
             index = svm_dump_instruction(stdout, code, index);
         }
         printf("\n");
     }
+}
+
+static void
+assemble_Opcode(int code_size, SVM_Byte *code)
+{
+    printf("*** assemble opcodes ***\n");
+    for (int index = 0; index < code_size; index++) {
+        fprintf(stdout, "%x", code[index]);
+    }
+    printf("\n");
 }
 
 static void
@@ -182,6 +210,8 @@ dump_function(SVM_Executable *exe, int function_count, SVM_Function *function)
                         function[i].code_block.code);
             dump_line_number(function[i].code_block.line_number_size,
                                 function[i].code_block.line_number);
+            assemble_Opcode(function[i].code_block.code_size,
+                        function[i].code_block.code);
         }
         
         printf("*** end of %s ***\n", function[i].name);
