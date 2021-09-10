@@ -1,6 +1,13 @@
 #ifndef _SVMCODE_H_
 #define _SVMCODE_H_
 
+#define OPCODE_ALLOC_SIZE (256)
+#define LABEL_TABLE_ALLOC_SIZE (256)
+
+#define JUMP_TARGET_SIZE (4)
+#define SHIFT_SIZE (8)
+#define SHIFT_OP(value, shift) (SVM_Byte)(((value) & ((int64_t) 0xff << (shift))) >> (shift))
+
 typedef enum {
 	OP_FALSE  = 0x00,
 	OP_0      = 0x00, // synonym
