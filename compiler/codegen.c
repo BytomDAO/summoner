@@ -62,7 +62,7 @@ init_opcode_buf(OpcodeBuf *ob)
 static void
 fix_labels(OpcodeBuf *ob)
 {
-   int i;
+    int i;
     int j;
     OpcodeInfo *info;
     int label;
@@ -81,7 +81,10 @@ fix_labels(OpcodeBuf *ob)
             || ob->code[i] == OP_JUMPIF) {
             label = ob->code[i+1];
             address = ob->label_table[label].label_address;
-            ob->code[i+1] = (SVM_Byte)address;
+            for(j = 0; j < 4; j++) {
+                int64_t shift = 8 * (4 - (j + 1));
+                ob->code[ob->size++] = (SVM_Byte)((address & ((int64_t) 0xff << shift)) >> shift);
+            }
         }
     }
 }
@@ -167,6 +170,34 @@ generate_code(OpcodeBuf *ob, SVM_Opcode code,  ...)
 
     ob->code[ob->size] = code;
     ob->size++;
+}
+
+static void
+generate_immediate_code(OpcodeBuf *ob, int64_t value, int size)
+{
+    generate_code(ob, size == 4 ? OP_DATA_INT : OP_DATA_INT64);
+
+    if (ob->alloc_size < ob->size + 1 + (size * 2)) {
+        ob->code = realloc(ob->code, ob->alloc_size + OPCODE_ALLOC_SIZE);
+        ob->alloc_size += OPCODE_ALLOC_SIZE;
+    }
+    for(int i = 0; i < size; i++) {
+        int64_t shift = 8 * (size - (i + 1));
+        ob->code[ob->size++] = (SVM_Byte)((value & ((int64_t) 0xff << shift)) >> shift);
+    }
+}
+
+static void
+generate_label_code(OpcodeBuf *ob, int value)
+{
+    if (ob->alloc_size < ob->size + 1 + (4 * 2)) {
+        ob->code = realloc(ob->code, ob->alloc_size + OPCODE_ALLOC_SIZE);
+        ob->alloc_size += OPCODE_ALLOC_SIZE;
+    }
+    for(int i = 0; i < 4; i++) {
+        int64_t shift = 8 * (4 - (i + 1));
+        ob->code[ob->size++] = (SVM_Byte)((value & ((int64_t) 0xff << shift)) >> shift);
+    }
 }
 
 static void
@@ -276,7 +307,8 @@ generate_pop_to_identifier(Declaration *decl, OpcodeBuf *ob)
         generate_code(ob, OP_DUP);
         break;    
     default:
-        generate_code(ob, OP_ROLL, decl->variable_index);
+        generate_code(ob, OP_1 + decl->variable_index - 1);
+        generate_code(ob, OP_ROLL);
         break;
     }
     generate_code(ob, OP_DROP);
@@ -330,15 +362,16 @@ generate_if_statement(SVM_Executable *exe, Block *block,
 
     if_false_label = get_label(ob);
     generate_code(ob, OP_NOT);
+    generate_code(ob, OP_NOP);
     generate_code(ob, OP_JUMPIF);
-    generate_code(ob, if_false_label);
+    generate_label_code(ob, if_false_label);
 
     generate_statement_list(exe, if_s->then_block,
                             if_s->then_block->statement_list, ob);
 
     end_label = get_label(ob);
     generate_code(ob, OP_JUMP);
-    generate_code(ob, end_label);
+    generate_label_code(ob, end_label);
     set_label(ob, if_false_label);
 
     for (elseif = if_s->elseif_list; elseif; elseif = elseif->next) {
@@ -347,12 +380,12 @@ generate_if_statement(SVM_Executable *exe, Block *block,
         if_false_label = get_label(ob);
         generate_code(ob, OP_NOT);
         generate_code(ob, OP_JUMPIF);
-        generate_code(ob, if_false_label);
+        generate_label_code(ob, if_false_label);
 
         generate_statement_list(exe, elseif->block,
                                 elseif->block->statement_list, ob);
 
-        generate_code(ob, end_label);  
+        generate_label_code(ob, end_label);
         generate_code(ob, OP_JUMP);
         set_label(ob, if_false_label);
     }
@@ -389,17 +422,6 @@ generate_boolean_expression(SVM_Executable *cf, Expression *expr,
         generate_code(ob, OP_TRUE, 1);
     } else {
         generate_code(ob, OP_FALSE, 0);
-    }
-}
-
-static void
-generate_immediate_code(OpcodeBuf *ob, int64_t value, int size)
-{
-    generate_code(ob, size == 4 ? OP_DATA_INT : OP_DATA_INT64);
-
-    for(int i = 0; i < size; i++) {
-        int64_t shift = 8 * (size - (i + 1));
-        ob->code[ob->size++] = (SVM_Byte)((value & ((int64_t) 0xff << shift)) >> shift);
     }
 }
 
