@@ -8,6 +8,10 @@ extern OpcodeInfo svm_opcode_info[];
 #define OPCODE_ALLOC_SIZE (256)
 #define LABEL_TABLE_ALLOC_SIZE (256)
 
+#define JUMP_TARGET_SIZE (4)
+#define SHIFT_SIZE (8)
+#define SHIFT_OP(value, shift) (SVM_Byte)(((value) & ((int64_t) 0xff << (shift))) >> (shift))
+
 typedef struct
 {
     int label_address;
@@ -81,9 +85,9 @@ fix_labels(OpcodeBuf *ob)
             || ob->code[i] == OP_JUMPIF) {
             label = ob->code[i+1];
             address = ob->label_table[label].label_address;
-            for(j = 0; j < 4; j++) {
-                int64_t shift = 8 * (4 - (j + 1));
-                ob->code[ob->size++] = (SVM_Byte)((address & ((int64_t) 0xff << shift)) >> shift);
+            for(j = 0; j < JUMP_TARGET_SIZE; j++) {
+                int64_t shift = SHIFT_SIZE * (JUMP_TARGET_SIZE - (j + 1));
+                ob->code[ob->size++] = SHIFT_OP(address, shift);
             }
         }
     }
@@ -182,21 +186,21 @@ generate_immediate_code(OpcodeBuf *ob, int64_t value, int size)
         ob->alloc_size += OPCODE_ALLOC_SIZE;
     }
     for(int i = 0; i < size; i++) {
-        int64_t shift = 8 * (size - (i + 1));
-        ob->code[ob->size++] = (SVM_Byte)((value & ((int64_t) 0xff << shift)) >> shift);
+        int64_t shift = SHIFT_SIZE * (size - (i + 1));
+        ob->code[ob->size++] = SHIFT_OP(value, shift);
     }
 }
 
 static void
 generate_label_code(OpcodeBuf *ob, int value)
 {
-    if (ob->alloc_size < ob->size + 1 + (4 * 2)) {
+    if (ob->alloc_size < ob->size + 1 + (JUMP_TARGET_SIZE * 2)) {
         ob->code = realloc(ob->code, ob->alloc_size + OPCODE_ALLOC_SIZE);
         ob->alloc_size += OPCODE_ALLOC_SIZE;
     }
-    for(int i = 0; i < 4; i++) {
-        int64_t shift = 8 * (4 - (i + 1));
-        ob->code[ob->size++] = (SVM_Byte)((value & ((int64_t) 0xff << shift)) >> shift);
+    for(int i = 0; i < JUMP_TARGET_SIZE; i++) {
+        int64_t shift = SHIFT_SIZE * (JUMP_TARGET_SIZE - (i + 1));
+        ob->code[ob->size++] = SHIFT_OP(value, shift);
     }
 }
 
