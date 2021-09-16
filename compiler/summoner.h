@@ -145,6 +145,7 @@ typedef struct Declaration
     Expression *initializer;
     bool is_local;
     int variable_index;
+    int pc;
     struct Declaration *next;
 } Declaration;
 

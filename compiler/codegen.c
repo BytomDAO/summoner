@@ -15,6 +15,7 @@ typedef struct
     int size;
     int alloc_size;
     SVM_Byte *code;
+    int pc;
     int label_table_size;
     int label_table_alloc_size;
     LabelTable *label_table;
@@ -49,6 +50,7 @@ init_opcode_buf(OpcodeBuf *ob)
     ob->size = 0;
     ob->alloc_size = 0;
     ob->code = NULL;
+    ob->pc = 0;
     ob->label_table_size = 0;
     ob->label_table_alloc_size = 0;
     ob->label_table = NULL;
@@ -70,6 +72,7 @@ fix_labels(OpcodeBuf *ob)
         if (ob->code[i] >= OP_DATA_1 && ob->code[i] <= OP_DATA_75) {
             int len = ob->code[i] - OP_DATA_1 + 1;
             i += len;
+            ob->pc++;
             continue;
         }
 
@@ -83,6 +86,7 @@ fix_labels(OpcodeBuf *ob)
                 ob->code[ob->size++] = SHIFT_OP(address, shift);
             }
         }
+        ob->pc++;
     }
 }
 
@@ -137,7 +141,7 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
 
     for (dl = compiler->declaration_list, i = 0; dl; dl = dl->next, i++)
     {
-        strcpy(exe->global_variable[i].name, dl->name);
+        exe->global_variable[i].name = dl->name;
         exe->global_variable[i].type = dl->type;
     }
     // TODO: derive type: FUNCTION_DERIVE/ARRAY_DERIVE
@@ -148,6 +152,7 @@ generate_builtin_code(OpcodeBuf *ob, SVM_Opcode *ops, int op_cnt)
     for(int i = 0; i< op_cnt; i++) {
         ob->code[ob->size] = ops[i];
         ob->size++;
+        ob->pc++;
     }
 }
 
@@ -167,6 +172,7 @@ generate_code(OpcodeBuf *ob, SVM_Opcode code,  ...)
 
     ob->code[ob->size] = code;
     ob->size++;
+    ob->pc++;
 }
 
 static void
@@ -195,6 +201,7 @@ generate_label_code(OpcodeBuf *ob, int value)
         int64_t shift = SHIFT_SIZE * (JUMP_TARGET_SIZE - (i + 1));
         ob->code[ob->size++] = SHIFT_OP(value, shift);
     }
+    ob->pc++;
 }
 
 static void
@@ -243,7 +250,7 @@ count_parameter(ParameterList *src)
 }
 
 static SVM_Variable *
-copy_parameter_list(ParameterList *src, int *param_count_p)
+copy_parameter_list(ParameterList *src, int *param_count_p, OpcodeBuf *ob)
 {
     ParameterList *param;
     SVM_Variable *dest;
@@ -258,6 +265,7 @@ copy_parameter_list(ParameterList *src, int *param_count_p)
     for (param = src, i = 0; param; param = param->next, i++) {
         dest[i].name = strdup(param->name);
         dest[i].type = alloc_type_specifier(param->type->basic_type);
+        ob->pc++;
     }
 
     return dest;
@@ -271,7 +279,7 @@ add_function(SVM_Executable *exe, FuncDefinition *src, SVM_Function *dest)
 
     dest->type = alloc_type_specifier(src->return_type->basic_type);
     dest->parameter = copy_parameter_list(src->parameters,
-                                          &dest->parameter_count);
+                                          &dest->parameter_count, &ob);
 
     generate_statement_list(exe, src->code_block, src->code_block->statement_list, &ob);
     dest->code_block.code_size = ob.size;
@@ -295,20 +303,27 @@ add_functions(Compiler *compiler, SVM_Executable *exe)
 }
 
 static void
+generate_int_expression(SVM_Executable *cf, int64_t value,
+                        OpcodeBuf *ob);
+
+static void
 generate_pop_to_identifier(Declaration *decl, OpcodeBuf *ob)
 {
-    switch (decl->variable_index) {
+    int depth = ob->pc - decl->pc - 1;
+    switch (depth) {
     case 0:
+        generate_code(ob, OP_DUP);
         break;
     case 1:
-        generate_code(ob, OP_DUP);
+        generate_code(ob, OP_OVER);
         break;    
     default:
-        generate_code(ob, OP_1 + decl->variable_index - 1);
-        generate_code(ob, OP_ROLL);
+        generate_int_expression(NULL, depth, ob);
+        generate_code(ob, OP_PICK);
         break;
     }
-    generate_code(ob, OP_DROP);
+
+    decl->pc = ob->pc;
 }
 
 static void
@@ -452,6 +467,7 @@ generate_string_expression(SVM_Executable *cf, Expression *expr,
         ob->code[ob->size] = str[i];
         ob->size++;
     }
+    ob->pc++;
 }
 
 // NOTE: no bvm ops for double type
