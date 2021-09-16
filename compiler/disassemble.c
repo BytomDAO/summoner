@@ -170,7 +170,16 @@ assemble_Opcode(int code_size, SVM_Byte *code)
 {
     printf("*** assemble opcodes ***\n");
     for (int index = 0; index < code_size; index++) {
-        fprintf(stdout, "%x", code[index]);
+        fprintf(stdout, "%02x", code[index]);
+        
+        if (code[index] == OP_DATA_4 || code[index] == OP_DATA_8) {
+            int size = (code[index] == OP_DATA_4 ? sizeof(int) : sizeof(int64_t));
+            for(int off = size; off > 0; off--) {
+                fprintf(stdout, "%02x", code[index+off]);
+            }
+            index += size;
+            continue;
+        }
     }
     printf("\n");
 }
