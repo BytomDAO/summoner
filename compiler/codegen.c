@@ -132,10 +132,24 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
     Declaration *dl;
     int i, var_count = 0;
 
+    OpcodeBuf ob;
+    init_opcode_buf(&ob);
+
     for (dl = compiler->declaration_list; dl; dl = dl->next)
     {
         var_count++;
+        if (dl->initializer == NULL)
+            continue;
+        char *decl_str = dl->initializer->u.str_value;
+        if (ob.alloc_size < ob.size + 1 + sizeof(decl_str)) {
+            ob.code = realloc(ob.code, ob.alloc_size + OPCODE_ALLOC_SIZE);
+            ob.alloc_size += OPCODE_ALLOC_SIZE;
+        }
+        ob.code[ob.size] = strdup(decl_str);
+        ob.size += sizeof(decl_str);
+        ob.pc++;
     }
+
     exe->global_variable_count = var_count;
     exe->global_variable = (SVM_Variable *)malloc(sizeof(SVM_Variable) * var_count);
 
@@ -144,8 +158,8 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
         exe->global_variable[i].name = dl->name;
         exe->global_variable[i].type = dl->type;
     }
-    // TODO: derive type: FUNCTION_DERIVE/ARRAY_DERIVE
 }
+
 static void
 generate_builtin_code(OpcodeBuf *ob, SVM_Opcode *ops, int op_cnt)
 {
@@ -309,6 +323,10 @@ generate_int_expression(SVM_Executable *cf, int64_t value,
 static void
 generate_pop_to_identifier(Declaration *decl, OpcodeBuf *ob)
 {
+    if (!decl->is_local) {
+        generate_code(ob, OP_TOALTSTACK);
+        return;
+    }
     int depth = ob->pc - decl->pc - 1;
     switch (depth) {
     case 0:
@@ -480,6 +498,34 @@ generate_double_expression(SVM_Executable *cf, Expression *expr,
 static void
 generate_identifier(IdentifierExpression *identifier_expr, OpcodeBuf *ob)
 {
+    Declaration *decl = identifier_expr->u.declaration;
+    if (!decl->is_local) {
+        for(int i = 0; i <= ob->pc - decl->variable_index; i++) {
+            generate_code(ob, OP_FROMALTSTACK);
+        }
+        generate_code(ob, OP_DUP);
+        for(int i = 0; i <= ob->pc - decl->variable_index; i++) {
+            generate_code(ob, OP_SWAP);
+            generate_code(ob, OP_TOALTSTACK);
+        }
+        return;
+    }
+
+    int depth = ob->pc - decl->pc - 1;
+    switch (depth) {
+    case 0:
+        generate_code(ob, OP_DUP);
+        break;
+    case 1:
+        generate_code(ob, OP_OVER);
+        break;
+    default:
+        generate_int_expression(NULL, depth, ob);
+        generate_code(ob, OP_PICK);
+        break;
+    }
+
+    decl->pc = ob->size;
 }
 
 static void
@@ -499,7 +545,7 @@ generate_identifier_expression(SVM_Executable *exe, Block *block,
     case STRUCT_DEFINITION:
         break;
     case IDENTIFIER_EXPRESSION:
-        generate_pop_to_lvalue(exe, block, expr, ob);
+        generate_identifier(expr->u.identifier, ob);
         break;
     default:
         printf("bad default. kind..%d", expr->kind);
