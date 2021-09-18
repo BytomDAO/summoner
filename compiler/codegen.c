@@ -5,24 +5,6 @@
 
 extern OpcodeInfo svm_opcode_info[];
 
-typedef struct
-{
-    int label_address;
-} LabelTable;
-
-typedef struct
-{
-    int size;
-    int alloc_size;
-    SVM_Byte *code;
-    int pc;
-    int label_table_size;
-    int label_table_alloc_size;
-    LabelTable *label_table;
-    int line_number_size;
-    SVM_LineNumber *line_number;
-} OpcodeBuf;
-
 static SVM_Executable *
 alloc_executable()
 {
@@ -40,6 +22,7 @@ alloc_executable()
     exe->constant_definition = NULL;
     exe->type_specifier_count = 0;
     exe->type_specifier = NULL;
+    exe->ob_alt = NULL;
 
     return exe;
 }
@@ -134,6 +117,7 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
 
     OpcodeBuf ob;
     init_opcode_buf(&ob);
+    exe->ob_alt = &ob;
 
     for (dl = compiler->declaration_list; dl; dl = dl->next)
     {
@@ -321,12 +305,25 @@ generate_int_expression(SVM_Executable *cf, int64_t value,
                         OpcodeBuf *ob);
 
 static void
-generate_pop_to_identifier(Declaration *decl, OpcodeBuf *ob)
+generate_pop_to_identifier(SVM_Executable *cf, Declaration *decl, 
+                           OpcodeBuf *ob)
 {
     if (!decl->is_local) {
-        generate_code(ob, OP_TOALTSTACK);
+        OpcodeBuf *ob_alt = cf->ob_alt;
+        for(int i = 0; i <= ob_alt->pc - decl->variable_index; i++) {
+            generate_code(ob, OP_FROMALTSTACK);
+        }
+
+        generate_code(ob, OP_DROP);
+        generate_immediate_code(ob, ob_alt->pc + decl->variable_index, sizeof(int));
+        generate_code(ob, OP_ROLL);
+
+        for(int i = 0; i <= ob_alt->pc - decl->variable_index; i++) {
+            generate_code(ob, OP_TOALTSTACK);
+        }
         return;
     }
+
     int depth = ob->pc - decl->pc - 1;
     switch (depth) {
     case 0:
@@ -348,7 +345,7 @@ static void
 generate_pop_to_lvalue(SVM_Executable *exe, Block *block,
                        Expression *expr, OpcodeBuf *ob)
 {
-    generate_pop_to_identifier(expr->u.identifier->u.declaration, ob);
+    generate_pop_to_identifier(exe, expr->u.identifier->u.declaration, ob);
 
 }
 static void
@@ -441,7 +438,7 @@ generate_initializer(SVM_Executable *exe, Block *current_block,
                      OpcodeBuf *ob)
 {
     generate_expression(exe, current_block, decl_stmt->initializer, ob);
-    generate_pop_to_identifier(decl_stmt, ob);
+    generate_pop_to_identifier(exe, decl_stmt, ob);
 }
 
 static void
@@ -496,15 +493,17 @@ generate_double_expression(SVM_Executable *cf, Expression *expr,
 }
 
 static void
-generate_identifier(IdentifierExpression *identifier_expr, OpcodeBuf *ob)
+generate_identifier(SVM_Executable *cf, IdentifierExpression *identifier_expr, 
+                    OpcodeBuf *ob)
 {
     Declaration *decl = identifier_expr->u.declaration;
     if (!decl->is_local) {
-        for(int i = 0; i <= ob->pc - decl->variable_index; i++) {
+        OpcodeBuf *ob_alt = cf->ob_alt;
+        for(int i = 0; i <= ob_alt->pc - decl->variable_index; i++) {
             generate_code(ob, OP_FROMALTSTACK);
         }
         generate_code(ob, OP_DUP);
-        for(int i = 0; i <= ob->pc - decl->variable_index; i++) {
+        for(int i = 0; i <= ob_alt->pc - decl->variable_index; i++) {
             generate_code(ob, OP_SWAP);
             generate_code(ob, OP_TOALTSTACK);
         }
@@ -534,18 +533,18 @@ generate_identifier_expression(SVM_Executable *exe, Block *block,
 {
     switch (expr->kind) {
     case DECLARATION_DEFINITION:
-        generate_identifier(expr->u.identifier, ob);
+        generate_identifier(exe, expr->u.identifier, ob);
         break;
     case FUNC_DEFINITION:
         generate_code(ob, OP_INVOKE);
         break;
     case CONST_DEFINITION:
-        generate_identifier(expr->u.identifier, ob);
+        generate_identifier(exe, expr->u.identifier, ob);
         break;
     case STRUCT_DEFINITION:
         break;
     case IDENTIFIER_EXPRESSION:
-        generate_identifier(expr->u.identifier, ob);
+        generate_identifier(exe, expr->u.identifier, ob);
         break;
     default:
         printf("bad default. kind..%d", expr->kind);

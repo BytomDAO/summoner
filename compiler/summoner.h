@@ -345,6 +345,24 @@ void set_current_compiler(Compiler *compiler);
 void add_stmt_to_compiler(Statement *stmt);
 void add_func_definition_to_compiler(FuncDefinition *func_definition);
 
+typedef struct
+{
+    int label_address;
+} LabelTable;
+
+typedef struct
+{
+    int size;
+    int alloc_size;
+    SVM_Byte *code;
+    int pc;
+    int label_table_size;
+    int label_table_alloc_size;
+    LabelTable *label_table;
+    int line_number_size;
+    SVM_LineNumber *line_number;
+} OpcodeBuf;
+
 typedef struct SVM_Executable
 {
     int constant_pool_count;
@@ -358,6 +376,8 @@ typedef struct SVM_Executable
     int constant_count;
     SVM_Constant *constant_definition;
     SVM_CodeBlock top_level;
+    // storage for alt stack
+    OpcodeBuf *ob_alt;
 } SVM_Executable;
 
 /** string.c */
