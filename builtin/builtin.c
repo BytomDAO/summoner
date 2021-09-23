@@ -12,7 +12,7 @@ static BasicType check_tx_sig_params[] = {PUBKEY_TYPE, SIG_TYPE};
 static BasicType check_msg_sig_params[] = {PUBKEY_TYPE, HASH_TYPE, SIG_TYPE};
 static BasicType below_params[] = {INT_TYPE, BOOLEAN_TYPE};
 static BasicType above_params[] = {INT_TYPE, BOOLEAN_TYPE};
-static BasicType lock_params[] = {AMOUNT_TYPE, ASSET_TYPE, HEX_TYPE, HEX_TYPE};
+static BasicType lock_params[] = {AMOUNT_TYPE, ASSET_TYPE, HEX_TYPE};
 static BasicType verify_params[] = {BOOLEAN_TYPE};
 
 static SVM_Opcode sha3_ops[] = {OP_SHA3};

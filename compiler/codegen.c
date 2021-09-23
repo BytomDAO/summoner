@@ -563,7 +563,11 @@ generate_push_argument(SVM_Executable *exe, Block *block,
             generate_code(ob, OP_0);
         }
 
-        generate_expression(exe, block, arg_pos->expr, ob);
+        if (!strcmp(name, "lock") && !strcmp(arg_pos->expr->u.str_value, "")) {
+            generate_code(ob, OP_PROGRAM);
+        } else {
+            generate_expression(exe, block, arg_pos->expr, ob);
+        }
 
         if (!strcmp(name, "lock") && arg_pos->expr->type->basic_type == ASSET_TYPE) {
             generate_code(ob, OP_1);
