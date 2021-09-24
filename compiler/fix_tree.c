@@ -767,23 +767,29 @@ fix_return_statement(Block *current_block, Statement *statement, FuncDefinition 
 static void
 fix_declaration_stmt(Block *current_block, Statement *stmt, FuncDefinition *fd)
 {
-    Declaration *decl = stmt->u.decl_s;
-    add_declaration(current_block, decl, fd, stmt->line_number);
-    if (decl->initializer)
+    Declaration *next = NULL;
+    for (Declaration *decl = stmt->u.decl_s; decl; decl = next)
     {
-        decl->initializer = fix_expression(current_block, decl->initializer);
-        if (!decl->type)
+        next = decl->next;
+        decl->next = NULL;
+        add_declaration(current_block, decl, fd, stmt->line_number);
+        if (decl->initializer)
         {
-            decl->type = decl->initializer->type;
+            decl->initializer = fix_expression(current_block, decl->initializer);
+            if (!decl->type)
+            {
+                decl->type = decl->initializer->type;
+            }
+            else if (decl->initializer->type->basic_type != decl->type->basic_type)
+            {
+                implicit_type_cast(decl->initializer, decl->type);
+            }
         }
-        else if (decl->initializer->type->basic_type != decl->type->basic_type)
+        else
         {
-            implicit_type_cast(decl->initializer, decl->type);
+            decl->initializer = init_expression(decl->type->basic_type);
+            decl->initializer = fix_expression(current_block, decl->initializer);
         }
-    }
-    else
-    {
-        decl->initializer = init_expression(decl->type->basic_type);
     }
 }
 
