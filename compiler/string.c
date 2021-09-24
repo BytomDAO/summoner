@@ -38,9 +38,9 @@ void reset_string_literal_buffer()
 
 char *close_string_literal(void)
 {
+    st_string_literal_buffer[st_string_literal_buffer_size] = 0;
     char *p = (char *) malloc(st_string_literal_buffer_size + 1);
     strcpy(p, st_string_literal_buffer);
-    p[st_string_literal_buffer_size] = '\0';
     reset_string_literal_buffer();
     return p;
 }
