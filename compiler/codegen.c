@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/SVM_code.h"
+#include "../include/DBG.h"
 
 extern OpcodeInfo svm_opcode_info[];
 
@@ -576,7 +577,8 @@ generate_push_argument(SVM_Executable *exe, Block *block,
             generate_code(ob, OP_0);
         }
 
-        if (!strcmp(name, "lock") && !strcmp(arg_pos->expr->u.str_value, "")) {
+        if (!strcmp(name, "lock") && arg_pos->expr->type->basic_type == HEX_TYPE
+            && !strcmp(arg_pos->expr->u.str_value, "")) {
             generate_code(ob, OP_PROGRAM);
         } else {
             generate_expression(exe, block, arg_pos->expr, ob);
@@ -718,9 +720,11 @@ generate_expression(SVM_Executable *exe, Block *current_block,
         generate_expression(exe, current_block, expr->u.unary_expression, ob);
         generate_code(ob, OP_NOT);
         break;
-        default:
-    printf("expr->kind..%d\n", expr->kind);
-    exit(1);
+    case TYPE_CAST_EXPRESSION:
+        generate_expression(exe, current_block, expr->u.unary_expression, ob);
+        break;
+    default:
+        DBG_assert(0, ("expr->kind..%d\n", expr->kind));
     }
 }
 
@@ -766,10 +770,7 @@ generate_statement_list(SVM_Executable *exe, Block *current_block,
                                           pos->statement->u.expr_s, ob);
             break;
         default:
-            printf("pos->statement->kind..%d\n", pos->statement->kind);
-            exit(1);
-            // TODO: use assert micro
-            // DBG_assert(0, ("pos->statement->kind..%d\n", pos->statement->kind));
+            DBG_assert(0, ("pos->statement->kind..%d\n", pos->statement->kind));
         }
     }
 }
