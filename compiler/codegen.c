@@ -110,41 +110,6 @@ fix_opcode_buf(OpcodeBuf *ob)
 }
 
 static void
-add_global_variable(Compiler *compiler, SVM_Executable *exe)
-{
-    Declaration *dl;
-    int i, var_count = 0;
-
-    OpcodeBuf ob;
-    init_opcode_buf(&ob);
-    exe->ob_alt = &ob;
-
-    for (dl = compiler->declaration_list; dl; dl = dl->next)
-    {
-        var_count++;
-        if (dl->initializer == NULL)
-            continue;
-        char *decl_str = dl->initializer->u.str_value;
-        if (ob.alloc_size < ob.size + 1 + sizeof(decl_str)) {
-            ob.code = realloc(ob.code, ob.alloc_size + OPCODE_ALLOC_SIZE);
-            ob.alloc_size += OPCODE_ALLOC_SIZE;
-        }
-        ob.code[ob.size] = strdup(decl_str);
-        ob.size += sizeof(decl_str);
-        ob.pc++;
-    }
-
-    exe->global_variable_count = var_count;
-    exe->global_variable = (SVM_Variable *)malloc(sizeof(SVM_Variable) * var_count);
-
-    for (dl = compiler->declaration_list, i = 0; dl; dl = dl->next, i++)
-    {
-        exe->global_variable[i].name = dl->name;
-        exe->global_variable[i].type = dl->type;
-    }
-}
-
-static void
 generate_builtin_code(OpcodeBuf *ob, SVM_Opcode *ops, int op_cnt)
 {
     for(int i = 0; i< op_cnt; i++) {
@@ -174,6 +139,20 @@ generate_code(OpcodeBuf *ob, SVM_Opcode code,  ...)
 }
 
 static void
+generate_label_code(OpcodeBuf *ob, int value)
+{
+    if (ob->alloc_size < ob->size + 1 + (JUMP_TARGET_SIZE * 2)) {
+        ob->code = realloc(ob->code, ob->alloc_size + OPCODE_ALLOC_SIZE);
+        ob->alloc_size += OPCODE_ALLOC_SIZE;
+    }
+    for(int i = 0; i < JUMP_TARGET_SIZE; i++) {
+        int64_t shift = SHIFT_SIZE * (JUMP_TARGET_SIZE - (i + 1));
+        ob->code[ob->size++] = SHIFT_OP(value, shift);
+    }
+    ob->pc++;
+}
+
+static void
 generate_immediate_code(OpcodeBuf *ob, int64_t value, int size)
 {
     generate_code(ob, size == 4 ? OP_DATA_INT : OP_DATA_INT64);
@@ -189,17 +168,51 @@ generate_immediate_code(OpcodeBuf *ob, int64_t value, int size)
 }
 
 static void
-generate_label_code(OpcodeBuf *ob, int value)
+add_global_variable(Compiler *compiler, SVM_Executable *exe)
 {
-    if (ob->alloc_size < ob->size + 1 + (JUMP_TARGET_SIZE * 2)) {
-        ob->code = realloc(ob->code, ob->alloc_size + OPCODE_ALLOC_SIZE);
-        ob->alloc_size += OPCODE_ALLOC_SIZE;
+    Declaration *dl;
+    int i, var_count = 0;
+
+    OpcodeBuf ob;
+    init_opcode_buf(&ob);
+    exe->ob_alt = &ob;
+
+    for (dl = compiler->declaration_list; dl; dl = dl->next)
+    {
+        var_count++;
+        if (dl->initializer == NULL)
+            continue;
+        if(dl->initializer->type->basic_type == INT_TYPE ||
+            dl->initializer->type->basic_type == AMOUNT_TYPE) {
+            int64_t value = dl->initializer->u.int_value;
+            if (value < 2147483648) {
+                generate_immediate_code(&ob, value, 4);
+            } else {
+                generate_immediate_code(&ob, value, 8);
+            }
+        } else {
+            // TODO: other type such as double
+            char *decl_str = dl->initializer->u.str_value;
+            if (ob.alloc_size < ob.size + 1 + sizeof(decl_str)) {
+                ob.code = realloc(ob.code, ob.alloc_size + OPCODE_ALLOC_SIZE);
+                ob.alloc_size += OPCODE_ALLOC_SIZE;
+            }
+            for (int index =0; i< sizeof(decl_str); i++) {
+                ob.code[ob.size + index] = decl_str[index];
+            }
+            ob.size += sizeof(decl_str);
+        }
+        ob.pc++;
     }
-    for(int i = 0; i < JUMP_TARGET_SIZE; i++) {
-        int64_t shift = SHIFT_SIZE * (JUMP_TARGET_SIZE - (i + 1));
-        ob->code[ob->size++] = SHIFT_OP(value, shift);
+
+    exe->global_variable_count = var_count;
+    exe->global_variable = (SVM_Variable *)malloc(sizeof(SVM_Variable) * var_count);
+
+    for (dl = compiler->declaration_list, i = 0; dl; dl = dl->next, i++)
+    {
+        exe->global_variable[i].name = dl->name;
+        exe->global_variable[i].type = dl->type;
     }
-    ob->pc++;
 }
 
 static void
