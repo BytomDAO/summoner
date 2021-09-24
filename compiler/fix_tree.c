@@ -491,6 +491,8 @@ fix_type_cast_expression(Block *current_block, Expression *expr)
             expr->kind = INT_EXPRESSION;
             expr->u.int_value = (int64_t)expr->u.unary_expression->u.double_value;
         }
+    } else if (expr->type->basic_type == AMOUNT_TYPE && unary_expr_type == INT_TYPE) {
+        return expr;
     }
     else
     {
