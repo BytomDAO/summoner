@@ -475,7 +475,8 @@ static Expression *
 fix_type_cast_expression(Block *current_block, Expression *expr)
 {
     expr->u.unary_expression = fix_expression(current_block, expr->u.unary_expression);
-    if (expr->type->basic_type == DOUBLE_TYPE && expr->u.unary_expression->type->basic_type == INT_TYPE)
+    BasicType unary_expr_type = expr->u.unary_expression->type->basic_type;
+    if (expr->type->basic_type == DOUBLE_TYPE && unary_expr_type == INT_TYPE)
     {
         if (expr->u.unary_expression->kind == INT_EXPRESSION)
         {
@@ -483,13 +484,15 @@ fix_type_cast_expression(Block *current_block, Expression *expr)
             expr->u.double_value = (double)expr->u.unary_expression->u.int_value;
         }
     }
-    else if (expr->type->basic_type == INT_TYPE && expr->u.unary_expression->type->basic_type == DOUBLE_TYPE)
+    else if (expr->type->basic_type == INT_TYPE && (unary_expr_type == DOUBLE_TYPE || unary_expr_type == AMOUNT_TYPE))
     {
         if (expr->u.unary_expression->kind == DOUBLE_EXPRESSION)
         {
             expr->kind = INT_EXPRESSION;
             expr->u.int_value = (int64_t)expr->u.unary_expression->u.double_value;
         }
+    } else if (expr->type->basic_type == AMOUNT_TYPE && unary_expr_type == INT_TYPE) {
+        return expr;
     }
     else
     {
