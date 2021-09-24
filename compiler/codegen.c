@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../include/SVM_code.h"
+#include "../include/DBG.h"
 
 extern OpcodeInfo svm_opcode_info[];
 
@@ -720,11 +721,10 @@ generate_expression(SVM_Executable *exe, Block *current_block,
         generate_code(ob, OP_NOT);
         break;
     case TYPE_CAST_EXPRESSION:
-        generate_int_expression(exe, expr->u.int_value, ob);
+        generate_expression(exe, current_block, expr->u.unary_expression, ob);
         break;
     default:
-    printf("expr->kind..%d\n", expr->kind);
-    exit(1);
+        DBG_assert(0, ("expr->kind..%d\n", expr->kind));
     }
 }
 
@@ -770,10 +770,7 @@ generate_statement_list(SVM_Executable *exe, Block *current_block,
                                           pos->statement->u.expr_s, ob);
             break;
         default:
-            printf("pos->statement->kind..%d\n", pos->statement->kind);
-            exit(1);
-            // TODO: use assert micro
-            // DBG_assert(0, ("pos->statement->kind..%d\n", pos->statement->kind));
+            DBG_assert(0, ("pos->statement->kind..%d\n", pos->statement->kind));
         }
     }
 }
