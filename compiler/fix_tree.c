@@ -684,6 +684,7 @@ add_local_variable(FuncDefinition *fd, Declaration *decl)
                                  sizeof(Declaration *) * (fd->local_variable_count + 1));
     fd->local_variable[fd->local_variable_count] = decl;
     decl->variable_index = fd->local_variable_count;
+    decl->pc = decl->variable_index;
     fd->local_variable_count++;
 }
 

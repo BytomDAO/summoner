@@ -67,8 +67,9 @@ fix_labels(OpcodeBuf *ob)
             address = ob->label_table[label].label_address;
             for(j = 0; j < JUMP_TARGET_SIZE; j++) {
                 int64_t shift = SHIFT_SIZE * (JUMP_TARGET_SIZE - (j + 1));
-                ob->code[ob->size++] = SHIFT_OP(address, shift);
+                ob->code[i+j+1] = SHIFT_OP(address, shift);
             }
+            i += JUMP_TARGET_SIZE;
         }
         ob->pc++;
     }
@@ -330,6 +331,7 @@ generate_pop_to_identifier(SVM_Executable *cf, Declaration *decl,
 
         generate_code(ob, OP_DROP);
         generate_immediate_code(ob, ob_alt->pc + decl->variable_index, sizeof(int));
+        ob->pc--;
         generate_code(ob, OP_ROLL);
 
         for(int i = 0; i <= ob_alt->pc - decl->variable_index; i++) {
@@ -448,8 +450,8 @@ generate_if_statement(SVM_Executable *exe, Block *block,
         generate_statement_list(exe, elseif->block,
                                 elseif->block->statement_list, ob);
 
-        generate_label_code(ob, end_label);
         generate_code(ob, OP_JUMP);
+        generate_label_code(ob, end_label);
         ob->pc -= 2;
         set_label(ob, if_false_label);
     }
