@@ -368,8 +368,27 @@ generate_assign_statement(SVM_Executable *exe, Block *block,
                           AssignStatement *assign_stmt,
                           OpcodeBuf *ob)
 {
+    Declaration *decl =  assign_stmt->left->u.identifier->u.declaration;
+
+    int depth = ob->pc - decl->pc - 1;
+    switch (depth) {
+    case 0:
+        break;
+    case 1:
+        generate_code(ob, OP_SWAP);
+        break;
+    default:
+        generate_int_expression(exe, depth, ob);
+        ob->pc--;
+        generate_code(ob, OP_ROLL);
+        break;
+    }
+
+    generate_code(ob, OP_DROP);
+
+    decl->pc = ob->pc;
+
     generate_expression(exe, block, assign_stmt->operand, ob);
-    generate_pop_to_lvalue(exe, block, assign_stmt->left, ob);
 
 }
 
@@ -407,6 +426,7 @@ generate_if_statement(SVM_Executable *exe, Block *block,
     generate_code(ob, OP_NOP);
     generate_code(ob, OP_JUMPIF);
     generate_label_code(ob, if_false_label);
+    ob->pc -= 6;
 
     generate_statement_list(exe, if_s->then_block,
                             if_s->then_block->statement_list, ob);
@@ -415,6 +435,7 @@ generate_if_statement(SVM_Executable *exe, Block *block,
     generate_code(ob, OP_JUMP);
     generate_label_code(ob, end_label);
     set_label(ob, if_false_label);
+    ob->pc -= 2;
 
     for (elseif = if_s->elseif_list; elseif; elseif = elseif->next) {
         generate_expression(exe, block, elseif->condition, ob);
@@ -423,12 +444,13 @@ generate_if_statement(SVM_Executable *exe, Block *block,
         generate_code(ob, OP_NOT);
         generate_code(ob, OP_JUMPIF);
         generate_label_code(ob, if_false_label);
-
+        ob->pc -= 3;
         generate_statement_list(exe, elseif->block,
                                 elseif->block->statement_list, ob);
 
         generate_label_code(ob, end_label);
         generate_code(ob, OP_JUMP);
+        ob->pc -= 2;
         set_label(ob, if_false_label);
     }
     if (if_s->else_block) {
@@ -509,23 +531,23 @@ generate_double_expression(SVM_Executable *cf, Expression *expr,
 
 static void
 generate_identifier(SVM_Executable *cf, IdentifierExpression *identifier_expr, 
-                    OpcodeBuf *ob)
+                    OpcodeBuf *ob, int64_t identifier_pc)
 {
     Declaration *decl = identifier_expr->u.declaration;
     if (!decl->is_local) {
         OpcodeBuf *ob_alt = cf->ob_alt;
-        for(int i = 0; i <= ob_alt->pc - decl->variable_index; i++) {
+        for(int i = 0; i <= ob_alt->pc - identifier_pc; i++) {
             generate_code(ob, OP_FROMALTSTACK);
         }
         generate_code(ob, OP_DUP);
-        for(int i = 0; i <= ob_alt->pc - decl->variable_index; i++) {
+        for(int i = 0; i <= ob_alt->pc - identifier_pc; i++) {
             generate_code(ob, OP_SWAP);
             generate_code(ob, OP_TOALTSTACK);
         }
         return;
     }
 
-    int depth = ob->pc - decl->variable_index - 1;
+    int depth = ob->pc - identifier_pc - 1;
     switch (depth) {
     case 0:
         generate_code(ob, OP_DUP);
@@ -549,18 +571,21 @@ generate_identifier_expression(SVM_Executable *exe, Block *block,
 {
     switch (expr->kind) {
     case DECLARATION_DEFINITION:
-        generate_identifier(exe, expr->u.identifier, ob);
+        generate_identifier(exe, expr->u.identifier, ob,
+            expr->u.identifier->u.declaration->variable_index);
         break;
     case FUNC_DEFINITION:
         generate_code(ob, OP_INVOKE);
         break;
     case CONST_DEFINITION:
-        generate_identifier(exe, expr->u.identifier, ob);
+        generate_identifier(exe, expr->u.identifier, ob,
+            expr->u.identifier->u.declaration->variable_index);
         break;
     case STRUCT_DEFINITION:
         break;
     case IDENTIFIER_EXPRESSION:
-        generate_identifier(exe, expr->u.identifier, ob);
+        generate_identifier(exe, expr->u.identifier, ob,
+            expr->u.identifier->u.declaration->pc);
         break;
     default:
         printf("bad default. kind..%d", expr->kind);
