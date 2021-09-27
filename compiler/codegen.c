@@ -338,7 +338,7 @@ generate_pop_to_identifier(SVM_Executable *cf, Declaration *decl,
         return;
     }
 
-    int depth = ob->pc - decl->pc - 1;
+    int depth = ob->pc - decl->variable_index - 1;
     switch (depth) {
     case 0:
         generate_code(ob, OP_DUP);
@@ -348,6 +348,7 @@ generate_pop_to_identifier(SVM_Executable *cf, Declaration *decl,
         break;    
     default:
         generate_int_expression(NULL, depth, ob);
+        ob->pc--;
         generate_code(ob, OP_PICK);
         break;
     }
@@ -452,7 +453,7 @@ generate_initializer(SVM_Executable *exe, Block *current_block,
                      OpcodeBuf *ob)
 {
     generate_expression(exe, current_block, decl_stmt->initializer, ob);
-    generate_pop_to_identifier(exe, decl_stmt, ob);
+    decl_stmt->pc = ob->pc;
 }
 
 static void
@@ -524,7 +525,7 @@ generate_identifier(SVM_Executable *cf, IdentifierExpression *identifier_expr,
         return;
     }
 
-    int depth = ob->pc - decl->pc - 1;
+    int depth = ob->pc - decl->variable_index - 1;
     switch (depth) {
     case 0:
         generate_code(ob, OP_DUP);
@@ -534,11 +535,12 @@ generate_identifier(SVM_Executable *cf, IdentifierExpression *identifier_expr,
         break;
     default:
         generate_int_expression(NULL, depth, ob);
+        ob->pc--;
         generate_code(ob, OP_PICK);
         break;
     }
 
-    decl->pc = ob->size;
+    decl->pc = ob->pc;
 }
 
 static void
