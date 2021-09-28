@@ -5,15 +5,27 @@
 #include "error.h"
 #include "../include/DBG.h"
 
+#define fix_expression(current_block, expr)  fix_expression_micro(current_block, expr, NULL)
+
 extern BuiltinFun *search_builtin_function(char *name);
-static Expression *fix_expression(Block *current_block, Expression *expr);
+static Expression *fix_expression_micro(Block *current_block, Expression *expr, Statement *stmt);
 static void fix_statement_list(Block *current_block, StatementList *list, FuncDefinition *fd);
 
 static Expression *
-fix_identifier_expression(Block *current_block, Expression *expr)
+fix_identifier_expression(Block *current_block, Expression *expr, Statement *stmt)
 {
     Declaration *decl;
     BuiltinFun *builtin_func;
+
+    // handle for assign stmt counting index such as a = a + 1
+    if (stmt && stmt->kind == ASSIGN_STATEMENT)
+    {
+        AssignStatement *assign_s = stmt->u.assign_s;
+        if (!strcmp(assign_s->left->u.identifier->name, expr->u.identifier->name))
+        {
+            assign_s->cnt++;
+        }
+    }
 
     decl = search_declaration(expr->u.identifier->name, current_block);
     if (decl)
@@ -618,7 +630,7 @@ static Expression *init_expression(BasicType basic_type)
 }
 
 static Expression *
-fix_expression(Block *current_block, Expression *expr)
+fix_expression_micro(Block *current_block, Expression *expr, Statement *stmt)
 {
     if (expr == NULL)
         return NULL;
@@ -638,7 +650,7 @@ fix_expression(Block *current_block, Expression *expr)
             expr->type = alloc_type_specifier(STRING_TYPE);
             break;
         case IDENTIFIER_EXPRESSION:
-            expr = fix_identifier_expression(current_block, expr);
+            expr = fix_identifier_expression(current_block, expr, stmt);
             break;
         case ADD_EXPRESSION: /* FALLTHRU */
         case SUB_EXPRESSION: /* FALLTHRU */
@@ -799,7 +811,7 @@ fix_assign_stmt(Block *current_block, Statement *stmt)
 {
     AssignStatement *assign_s = stmt->u.assign_s;
     assign_s->left = fix_expression(current_block, assign_s->left);
-    assign_s->operand = fix_expression(current_block, assign_s->operand);
+    assign_s->operand = fix_expression_micro(current_block, assign_s->operand, stmt);
     if (assign_s->operand->type->basic_type != assign_s->left->type->basic_type)
     {
         implicit_type_cast(assign_s->operand, assign_s->left->type);

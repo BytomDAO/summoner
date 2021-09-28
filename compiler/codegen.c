@@ -370,25 +370,27 @@ generate_assign_statement(SVM_Executable *exe, Block *block,
                           AssignStatement *assign_stmt,
                           OpcodeBuf *ob)
 {
-    Declaration *decl =  assign_stmt->left->u.identifier->u.declaration;
+    if (!assign_stmt->cnt) {
+        Declaration *decl =  assign_stmt->left->u.identifier->u.declaration;
 
-    int depth = ob->pc - decl->pc - 1;
-    switch (depth) {
-    case 0:
-        break;
-    case 1:
-        generate_code(ob, OP_SWAP);
-        break;
-    default:
-        generate_int_expression(exe, depth, ob);
-        ob->pc--;
-        generate_code(ob, OP_ROLL);
-        break;
+        int depth = ob->pc - decl->pc - 1;
+        switch (depth) {
+        case 0:
+            break;
+        case 1:
+            generate_code(ob, OP_SWAP);
+            break;
+        default:
+            generate_int_expression(exe, depth, ob);
+            ob->pc--;
+            generate_code(ob, OP_ROLL);
+            break;
+        }
+
+        generate_code(ob, OP_DROP);
+
+        decl->pc = ob->pc;
     }
-
-    generate_code(ob, OP_DROP);
-
-    decl->pc = ob->pc;
 
     generate_expression(exe, block, assign_stmt->operand, ob);
 
@@ -551,6 +553,8 @@ generate_identifier(SVM_Executable *cf, IdentifierExpression *identifier_expr,
 
     int depth = ob->pc - identifier_pc - 1;
     switch (depth) {
+    case -1:
+        break;
     case 0:
         generate_code(ob, OP_DUP);
         break;

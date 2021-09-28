@@ -153,6 +153,7 @@ typedef struct AssignStatement
 {
     Expression *left;
     Expression *operand;
+    int cnt;
 } AssignStatement;
 
 typedef struct Statement
