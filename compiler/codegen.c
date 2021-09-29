@@ -67,8 +67,9 @@ fix_labels(OpcodeBuf *ob)
             address = ob->label_table[label].label_address;
             for(j = 0; j < JUMP_TARGET_SIZE; j++) {
                 int64_t shift = SHIFT_SIZE * (JUMP_TARGET_SIZE - (j + 1));
-                ob->code[ob->size++] = SHIFT_OP(address, shift);
+                ob->code[i+j+1] = SHIFT_OP(address, shift);
             }
+            i += JUMP_TARGET_SIZE;
         }
         ob->pc++;
     }
@@ -174,36 +175,39 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
     Declaration *dl;
     int i, var_count = 0;
 
-    OpcodeBuf ob;
-    init_opcode_buf(&ob);
-    exe->ob_alt = &ob;
+    OpcodeBuf *ob = (OpcodeBuf*)malloc(sizeof(OpcodeBuf));;
+    init_opcode_buf(ob);
+    exe->ob_alt = ob;
 
     for (dl = compiler->declaration_list; dl; dl = dl->next)
     {
-        var_count++;
         if (dl->initializer == NULL)
             continue;
         if(dl->initializer->type->basic_type == INT_TYPE ||
             dl->initializer->type->basic_type == AMOUNT_TYPE) {
             int64_t value = dl->initializer->u.int_value;
             if (value < 2147483648) {
-                generate_immediate_code(&ob, value, 4);
+                generate_immediate_code(ob, value, 4);
             } else {
-                generate_immediate_code(&ob, value, 8);
+                generate_immediate_code(ob, value, 8);
             }
         } else {
             // TODO: other type such as double
             char *decl_str = dl->initializer->u.str_value;
-            if (ob.alloc_size < ob.size + 1 + sizeof(decl_str)) {
-                ob.code = realloc(ob.code, ob.alloc_size + OPCODE_ALLOC_SIZE);
-                ob.alloc_size += OPCODE_ALLOC_SIZE;
+            if (ob->alloc_size < ob->size + 1 + sizeof(decl_str)) {
+                ob->code = realloc(ob->code, ob->alloc_size + OPCODE_ALLOC_SIZE);
+                ob->alloc_size += OPCODE_ALLOC_SIZE;
             }
             for (int index =0; i< sizeof(decl_str); i++) {
-                ob.code[ob.size + index] = decl_str[index];
+                ob->code[ob->size + index] = decl_str[index];
             }
-            ob.size += sizeof(decl_str);
+            ob->size += sizeof(decl_str);
+            ob->pc++;
         }
-        ob.pc++;
+
+        int var_index = get_label(ob);
+        set_label(ob, var_index);
+        var_count++;
     }
 
     exe->global_variable_count = var_count;
@@ -286,18 +290,18 @@ copy_parameter_list(ParameterList *src, int *param_count_p, OpcodeBuf *ob)
 static void
 add_function(SVM_Executable *exe, FuncDefinition *src, SVM_Function *dest)
 {
-    OpcodeBuf ob;
-    init_opcode_buf(&ob);
+    OpcodeBuf *ob = (OpcodeBuf*)malloc(sizeof(OpcodeBuf));
+    init_opcode_buf(ob);
 
     dest->type = alloc_type_specifier(src->return_type->basic_type);
     dest->parameter = copy_parameter_list(src->parameters,
-                                          &dest->parameter_count, &ob);
+                                          &dest->parameter_count, ob);
 
-    generate_statement_list(exe, src->code_block, src->code_block->statement_list, &ob);
-    dest->code_block.code_size = ob.size;
-    dest->code_block.code = fix_opcode_buf(&ob);
-    dest->code_block.line_number_size = ob.line_number_size;
-    dest->code_block.line_number = ob.line_number;
+    generate_statement_list(exe, src->code_block, src->code_block->statement_list, ob);
+    dest->code_block.code_size = ob->size;
+    dest->code_block.code = fix_opcode_buf(ob);
+    dest->code_block.line_number_size = ob->line_number_size;
+    dest->code_block.line_number = ob->line_number;
     //dest->local_variable
     //    = copy_local_variables(src, dest->parameter_count);
     // dest->local_variable
@@ -330,6 +334,7 @@ generate_pop_to_identifier(SVM_Executable *cf, Declaration *decl,
 
         generate_code(ob, OP_DROP);
         generate_immediate_code(ob, ob_alt->pc + decl->variable_index, sizeof(int));
+        ob->pc--;
         generate_code(ob, OP_ROLL);
 
         for(int i = 0; i <= ob_alt->pc - decl->variable_index; i++) {
@@ -368,25 +373,28 @@ generate_assign_statement(SVM_Executable *exe, Block *block,
                           AssignStatement *assign_stmt,
                           OpcodeBuf *ob)
 {
-    Declaration *decl =  assign_stmt->left->u.identifier->u.declaration;
+    // NOTE: counts of variable for assign statement without OP_DROP
+    if (assign_stmt->variable_cnt <= 1) {
+        Declaration *decl =  assign_stmt->left->u.identifier->u.declaration;
 
-    int depth = ob->pc - decl->pc - 1;
-    switch (depth) {
-    case 0:
-        break;
-    case 1:
-        generate_code(ob, OP_SWAP);
-        break;
-    default:
-        generate_int_expression(exe, depth, ob);
-        ob->pc--;
-        generate_code(ob, OP_ROLL);
-        break;
+        int depth = ob->pc - decl->pc - 1;
+        switch (depth) {
+        case 0:
+            break;
+        case 1:
+            generate_code(ob, OP_SWAP);
+            break;
+        default:
+            generate_int_expression(exe, depth, ob);
+            ob->pc--;
+            generate_code(ob, OP_ROLL);
+            break;
+        }
+
+        generate_code(ob, OP_DROP);
+
+        decl->pc = ob->pc;
     }
-
-    generate_code(ob, OP_DROP);
-
-    decl->pc = ob->pc;
 
     generate_expression(exe, block, assign_stmt->operand, ob);
 
@@ -448,8 +456,8 @@ generate_if_statement(SVM_Executable *exe, Block *block,
         generate_statement_list(exe, elseif->block,
                                 elseif->block->statement_list, ob);
 
-        generate_label_code(ob, end_label);
         generate_code(ob, OP_JUMP);
+        generate_label_code(ob, end_label);
         ob->pc -= 2;
         set_label(ob, if_false_label);
     }
@@ -549,6 +557,8 @@ generate_identifier(SVM_Executable *cf, IdentifierExpression *identifier_expr,
 
     int depth = ob->pc - identifier_pc - 1;
     switch (depth) {
+    case -1:
+        break;
     case 0:
         generate_code(ob, OP_DUP);
         break;
@@ -805,17 +815,17 @@ generate_statement_list(SVM_Executable *exe, Block *current_block,
 static void
 add_top_level(Compiler *compiler, SVM_Executable *exe)
 {
-    OpcodeBuf ob;
+    OpcodeBuf *ob = (OpcodeBuf*)malloc(sizeof(OpcodeBuf));
 
-    init_opcode_buf(&ob);
+    init_opcode_buf(ob);
     //TODO: local statement list use - functionDecl -> Block -> statementList
     generate_statement_list(exe, NULL, NULL,
-                            &ob);
+                            ob);
 
-    exe->top_level.code_size = ob.size;
-    exe->top_level.code = fix_opcode_buf(&ob);
-    exe->top_level.line_number_size = ob.line_number_size;
-    exe->top_level.line_number = ob.line_number;
+    exe->top_level.code_size = ob->size;
+    exe->top_level.code = fix_opcode_buf(ob);
+    exe->top_level.line_number_size = ob->line_number_size;
+    exe->top_level.line_number = ob->line_number;
 }
 static void
 generate_constant_initializer(Compiler *compiler, SVM_Executable *exe)
