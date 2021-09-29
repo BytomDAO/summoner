@@ -371,7 +371,7 @@ generate_assign_statement(SVM_Executable *exe, Block *block,
                           OpcodeBuf *ob)
 {
     // NOTE: counts of variable for assign statement without OP_DROP
-    if (assign_stmt->cnt <= 1) {
+    if (assign_stmt->variable_cnt <= 1) {
         Declaration *decl =  assign_stmt->left->u.identifier->u.declaration;
 
         int depth = ob->pc - decl->pc - 1;

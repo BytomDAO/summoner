@@ -153,7 +153,8 @@ typedef struct AssignStatement
 {
     Expression *left;
     Expression *operand;
-    int cnt;
+    // counting variable for assign statement
+    int variable_cnt;
 } AssignStatement;
 
 typedef struct Statement

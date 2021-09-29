@@ -21,7 +21,7 @@ fix_identifier_expression(Block *current_block, Expression *expr, Statement *stm
         AssignStatement *assign_s = stmt->u.assign_s;
         if (!strcmp(assign_s->left->u.identifier->name, expr->u.identifier->name))
         {
-            assign_s->cnt++;
+            assign_s->variable_cnt++;
         }
     }
 
