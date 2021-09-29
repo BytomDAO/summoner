@@ -5,10 +5,8 @@
 #include "error.h"
 #include "../include/DBG.h"
 
-#define fix_expression(current_block, expr)  fix_expression_micro(current_block, expr, NULL)
-
 extern BuiltinFun *search_builtin_function(char *name);
-static Expression *fix_expression_micro(Block *current_block, Expression *expr, Statement *stmt);
+static Expression *fix_expression(Block *current_block, Expression *expr, Statement *stmt);
 static void fix_statement_list(Block *current_block, StatementList *list, FuncDefinition *fd);
 
 static Expression *
@@ -180,10 +178,10 @@ eval_math_expression(Block *current_block, Expression *expr)
 }
 
 static Expression *
-fix_math_binary_expression(Block *current_block, Expression *expr)
+fix_math_binary_expression(Block *current_block, Expression *expr, Statement *stmt)
 {
-    expr->u.binary_expression->left = fix_expression(current_block, expr->u.binary_expression->left);
-    expr->u.binary_expression->right = fix_expression(current_block, expr->u.binary_expression->right);
+    expr->u.binary_expression->left = fix_expression(current_block, expr->u.binary_expression->left, stmt);
+    expr->u.binary_expression->right = fix_expression(current_block, expr->u.binary_expression->right, stmt);
 
     expr = eval_math_expression(current_block, expr);
     if (expr->kind == INT_EXPRESSION || expr->kind == DOUBLE_EXPRESSION || expr->kind == STRING_EXPRESSION)
@@ -391,10 +389,10 @@ eval_compare_expression(Expression *expr)
 }
 
 static Expression *
-fix_compare_expression(Block *current_block, Expression *expr)
+fix_compare_expression(Block *current_block, Expression *expr, Statement *stmt)
 {
-    expr->u.binary_expression->left = fix_expression(current_block, expr->u.binary_expression->left);
-    expr->u.binary_expression->right = fix_expression(current_block, expr->u.binary_expression->right);
+    expr->u.binary_expression->left = fix_expression(current_block, expr->u.binary_expression->left, stmt);
+    expr->u.binary_expression->right = fix_expression(current_block, expr->u.binary_expression->right, stmt);
 
     expr = eval_compare_expression(expr);
     if (expr->kind == BOOL_EXPRESSION)
@@ -415,10 +413,10 @@ fix_compare_expression(Block *current_block, Expression *expr)
 }
 
 static Expression *
-fix_logical_and_or_expression(Block *current_block, Expression *expr)
+fix_logical_and_or_expression(Block *current_block, Expression *expr, Statement *stmt)
 {
-    expr->u.binary_expression->left = fix_expression(current_block, expr->u.binary_expression->left);
-    expr->u.binary_expression->right = fix_expression(current_block, expr->u.binary_expression->right);
+    expr->u.binary_expression->left = fix_expression(current_block, expr->u.binary_expression->left, stmt);
+    expr->u.binary_expression->right = fix_expression(current_block, expr->u.binary_expression->right, stmt);
 
     if (expr->u.binary_expression->left->type->basic_type == BOOLEAN_TYPE &&
         expr->u.binary_expression->right->type->basic_type == BOOLEAN_TYPE)
@@ -435,9 +433,9 @@ fix_logical_and_or_expression(Block *current_block, Expression *expr)
 }
 
 static Expression *
-fix_minus_expression(Block *current_block, Expression *expr)
+fix_minus_expression(Block *current_block, Expression *expr, Statement *stmt)
 {
-    expr->u.unary_expression = fix_expression(current_block, expr->u.unary_expression);
+    expr->u.unary_expression = fix_expression(current_block, expr->u.unary_expression, stmt);
     BasicType expr_type = expr->u.unary_expression->type->basic_type;
     if (expr_type != INT_TYPE && expr_type != DOUBLE_TYPE)
     {
@@ -461,9 +459,9 @@ fix_minus_expression(Block *current_block, Expression *expr)
 }
 
 static Expression *
-fix_logical_not_expression(Block *current_block, Expression *expr)
+fix_logical_not_expression(Block *current_block, Expression *expr, Statement *stmt)
 {
-    expr->u.unary_expression = fix_expression(current_block, expr->u.unary_expression);
+    expr->u.unary_expression = fix_expression(current_block, expr->u.unary_expression,stmt);
 
     if (expr->u.unary_expression->kind == BOOL_EXPRESSION)
     {
@@ -484,9 +482,9 @@ fix_logical_not_expression(Block *current_block, Expression *expr)
 }
 
 static Expression *
-fix_type_cast_expression(Block *current_block, Expression *expr)
+fix_type_cast_expression(Block *current_block, Expression *expr, Statement *stmt)
 {
-    expr->u.unary_expression = fix_expression(current_block, expr->u.unary_expression);
+    expr->u.unary_expression = fix_expression(current_block, expr->u.unary_expression, stmt);
     BasicType unary_expr_type = expr->u.unary_expression->type->basic_type;
     if (expr->type->basic_type == DOUBLE_TYPE && unary_expr_type == INT_TYPE)
     {
@@ -546,7 +544,7 @@ implicit_type_cast(Expression *expr, TypeSpecifier *type)
 
 static void
 check_argument(Block *current_block, int line_number,
-               ParameterList *param_list, ArgumentList *arg)
+               ParameterList *param_list, ArgumentList *arg, Statement *stmt)
 {
     ParameterList *param;
     TypeSpecifier *temp_type;
@@ -555,7 +553,7 @@ check_argument(Block *current_block, int line_number,
          param && arg;
          param = param->next, arg = arg->next)
     {
-        arg->expr = fix_expression(current_block, arg->expr);
+        arg->expr = fix_expression(current_block, arg->expr, stmt);
         if (param->type->basic_type != arg->expr->type->basic_type)
         {
             implicit_type_cast(arg->expr, param->type);
@@ -571,9 +569,9 @@ check_argument(Block *current_block, int line_number,
 }
 
 static Expression *
-fix_function_call_expression(Block *current_block, Expression *expr)
+fix_function_call_expression(Block *current_block, Expression *expr, Statement *stmt)
 {
-    Expression *func_expr = fix_expression(current_block, expr->u.func_call_expression->function);
+    Expression *func_expr = fix_expression(current_block, expr->u.func_call_expression->function, stmt);
     expr->u.func_call_expression->function = func_expr;
 
     BuiltinFun *builtin_fun = func_expr->u.identifier->u.builtin_func;
@@ -593,7 +591,7 @@ fix_function_call_expression(Block *current_block, Expression *expr)
     }
 
     check_argument(current_block, expr->line_number,
-                   parameter_list, expr->u.func_call_expression->argument_list);
+                   parameter_list, expr->u.func_call_expression->argument_list, stmt);
 
     for (ParameterList *pos = parameter_list; pos;)
     {
@@ -630,7 +628,7 @@ static Expression *init_expression(BasicType basic_type)
 }
 
 static Expression *
-fix_expression_micro(Block *current_block, Expression *expr, Statement *stmt)
+fix_expression(Block *current_block, Expression *expr, Statement *stmt)
 {
     if (expr == NULL)
         return NULL;
@@ -657,7 +655,7 @@ fix_expression_micro(Block *current_block, Expression *expr, Statement *stmt)
         case MUL_EXPRESSION: /* FALLTHRU */
         case DIV_EXPRESSION: /* FALLTHRU */
         case MOD_EXPRESSION:
-            expr = fix_math_binary_expression(current_block, expr);
+            expr = fix_math_binary_expression(current_block, expr, stmt);
             break;
         case EQ_EXPRESSION: /* FALLTHRU */
         case NE_EXPRESSION: /* FALLTHRU */
@@ -665,23 +663,23 @@ fix_expression_micro(Block *current_block, Expression *expr, Statement *stmt)
         case GE_EXPRESSION: /* FALLTHRU */
         case LT_EXPRESSION: /* FALLTHRU */
         case LE_EXPRESSION:
-            expr = fix_compare_expression(current_block, expr);
+            expr = fix_compare_expression(current_block, expr, stmt);
             break;
         case AND_EXPRESSION: /* FALLTHRU */
         case OR_EXPRESSION:
-            expr = fix_logical_and_or_expression(current_block, expr);
+            expr = fix_logical_and_or_expression(current_block, expr, stmt);
             break;
         case MINUS_EXPRESSION:
-            expr = fix_minus_expression(current_block, expr);
+            expr = fix_minus_expression(current_block, expr, stmt);
             break;
         case NOT_EXPRESSION:
-            expr = fix_logical_not_expression(current_block, expr);
+            expr = fix_logical_not_expression(current_block, expr, stmt);
             break;
         case TYPE_CAST_EXPRESSION:
-            expr = fix_type_cast_expression(current_block, expr);
+            expr = fix_type_cast_expression(current_block, expr, stmt);
             break;
         case FUNC_CALL_EXPRESSION:
-            expr = fix_function_call_expression(current_block, expr);
+            expr = fix_function_call_expression(current_block, expr, stmt);
             break;
         default:
             DBG_assert(0, ("bad case. kind..%d\n", expr->kind));
@@ -730,9 +728,9 @@ add_declaration(Block *current_block, Declaration *decl,
 }
 
 static void
-fix_if_statement(Block *current_block, IfStatement *if_s, FuncDefinition *fd)
+fix_if_statement(Block *current_block, IfStatement *if_s, FuncDefinition *fd, Statement *stmt)
 {
-    if_s->condition = fix_expression(current_block, if_s->condition);
+    if_s->condition = fix_expression(current_block, if_s->condition,stmt);
     if (if_s->condition->type->basic_type != BOOLEAN_TYPE)
     {
         compile_error(if_s->condition->line_number,
@@ -744,7 +742,7 @@ fix_if_statement(Block *current_block, IfStatement *if_s, FuncDefinition *fd)
 
     for (Elseif *pos = if_s->elseif_list; pos; pos = pos->next)
     {
-        pos->condition = fix_expression(current_block, pos->condition);
+        pos->condition = fix_expression(current_block, pos->condition, stmt);
         if (pos->block)
         {
             fix_statement_list(pos->block, pos->block->statement_list, fd);
@@ -759,7 +757,7 @@ fix_if_statement(Block *current_block, IfStatement *if_s, FuncDefinition *fd)
 static void
 fix_return_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
 {
-    Expression *return_value = fix_expression(current_block, statement->u.expr_s);
+    Expression *return_value = fix_expression(current_block, statement->u.expr_s, statement);
     if (fd->return_type->basic_type == VOID_TYPE && return_value != NULL)
     {
         compile_error(statement->line_number,
@@ -788,7 +786,7 @@ fix_declaration_stmt(Block *current_block, Statement *stmt, FuncDefinition *fd)
         add_declaration(current_block, decl, fd, stmt->line_number);
         if (decl->initializer)
         {
-            decl->initializer = fix_expression(current_block, decl->initializer);
+            decl->initializer = fix_expression(current_block, decl->initializer, stmt);
             if (!decl->type)
             {
                 decl->type = decl->initializer->type;
@@ -801,7 +799,7 @@ fix_declaration_stmt(Block *current_block, Statement *stmt, FuncDefinition *fd)
         else
         {
             decl->initializer = init_expression(decl->type->basic_type);
-            decl->initializer = fix_expression(current_block, decl->initializer);
+            decl->initializer = fix_expression(current_block, decl->initializer, stmt);
         }
     }
 }
@@ -810,8 +808,8 @@ static void
 fix_assign_stmt(Block *current_block, Statement *stmt)
 {
     AssignStatement *assign_s = stmt->u.assign_s;
-    assign_s->left = fix_expression(current_block, assign_s->left);
-    assign_s->operand = fix_expression_micro(current_block, assign_s->operand, stmt);
+    assign_s->left = fix_expression(current_block, assign_s->left, stmt);
+    assign_s->operand = fix_expression(current_block, assign_s->operand, stmt);
     if (assign_s->operand->type->basic_type != assign_s->left->type->basic_type)
     {
         implicit_type_cast(assign_s->operand, assign_s->left->type);
@@ -821,7 +819,7 @@ fix_assign_stmt(Block *current_block, Statement *stmt)
 static void
 fix_expression_stmt(Block *current_block, Statement *stmt)
 {
-    stmt->u.expr_s = fix_expression(current_block, stmt->u.expr_s);
+    stmt->u.expr_s = fix_expression(current_block, stmt->u.expr_s, stmt);
     if (stmt->u.expr_s->kind != FUNC_CALL_EXPRESSION)
     {
         compile_error(stmt->line_number,
@@ -836,7 +834,7 @@ fix_statement(Block *current_block, Statement *statement, FuncDefinition *fd)
     switch (statement->kind)
     {
         case IF_STATEMENT:
-            fix_if_statement(current_block, statement->u.if_s, fd);
+            fix_if_statement(current_block, statement->u.if_s, fd, statement);
             break;
         case RETURN_STATEMENT:
             fix_return_statement(current_block, statement, fd);
