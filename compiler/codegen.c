@@ -206,6 +206,7 @@ add_global_variable(Compiler *compiler, SVM_Executable *exe)
         }
 
         int var_index = get_label(ob);
+        dl->variable_index = var_index;
         set_label(ob, var_index);
         var_count++;
     }
@@ -544,18 +545,20 @@ generate_identifier(SVM_Executable *cf, IdentifierExpression *identifier_expr,
     Declaration *decl = identifier_expr->u.declaration;
     if (!decl->is_local) {
         OpcodeBuf *ob_alt = cf->ob_alt;
-        for(int i = 0; i <= ob_alt->pc - identifier_pc; i++) {
+        for(int i = 0; i < ob_alt->pc - decl->variable_index; i++) {
             generate_code(ob, OP_FROMALTSTACK);
+            ob->pc--;
         }
         generate_code(ob, OP_DUP);
-        for(int i = 0; i <= ob_alt->pc - identifier_pc; i++) {
+        for(int i = 0; i < ob_alt->pc - decl->variable_index; i++) {
             generate_code(ob, OP_SWAP);
             generate_code(ob, OP_TOALTSTACK);
+            ob->pc -= 2;
         }
         return;
     }
 
-    int depth = ob->pc - identifier_pc - 1;
+    int depth = ob->pc - decl->pc - 1;
     switch (depth) {
     case -1:
         break;
