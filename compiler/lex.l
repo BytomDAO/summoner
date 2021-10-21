@@ -72,6 +72,8 @@ void lex_err(char *str) {
 "nil"      return NIL;
 "var"      return VAR;
 "const"    return CONST;
+"type"     return TYPE;
+"contract" return CONTRACT;
 "func"     return FUNCTION;
 "return"   return RETURN;
 "break"    return BREAK;

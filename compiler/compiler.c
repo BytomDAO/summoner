@@ -8,6 +8,7 @@ Compiler *create_compiler()
     Compiler *compiler = (Compiler *)malloc(sizeof(Compiler));
     compiler->svm_constant_count = 0;
     compiler->svm_constant = NULL;
+    compiler->contract_definition = NULL;
     compiler->function_count = 0;
     compiler->func_definition_list = NULL;
     compiler->svm_function_count = 0;
@@ -33,6 +34,12 @@ void add_func_definition_to_compiler(FuncDefinition *func_definition)
 {
     Compiler *compiler = get_current_compiler();
     compiler->func_definition_list = chain_func_definition_list(compiler->func_definition_list, func_definition);
+}
+
+void add_contract_definition_to_compiler(ContractDefinition *contract_definition)
+{
+    Compiler *compiler = get_current_compiler();
+    compiler->contract_definition = contract_definition;
 }
 
 void add_stmt_to_compiler(Statement *stmt)
