@@ -8,29 +8,31 @@ int yyerror(const char *s);
 %}
 
 %union {
-    char *                  identifier;
-    char *                  str_value;
-    double                  double_value;
-    int64_t                 int_value;
-    struct Expression *     expression;
-    struct Declaration *    declaration;
-    struct Statement *      statement;
-    struct StatementList *  statement_list;
-    struct Block *          block;
-    struct Elseif *         elseif;
-    struct FuncDefinition * func_definition;
-    struct Definition *     definition;
-    struct DefinitionList * definition_list;
-    struct TypeSpecifier *  type_specifier;
-    struct ParameterList *  parameter_list;
-    struct ArgumentList *   argument_list;
+    char *                     identifier;
+    char *                     str_value;
+    double                     double_value;
+    int64_t                    int_value;
+    struct Expression *        expression;
+    struct Declaration *       declaration;
+    struct Statement *         statement;
+    struct StatementList *     statement_list;
+    struct Block *             block;
+    struct Elseif *            elseif;
+    struct FuncDefinition *     func_definition;
+    struct Definition *         definition;
+    struct DefinitionList *     definition_list;
+    struct TypeSpecifier *      type_specifier;
+    struct ParameterList *     parameter_list;
+    struct ArgumentList *      argument_list;
+    struct StateDeclaration *  state_declaration;
+    struct ContractDefinition * contract_definition;
 }
 
 %token <double_value> DOUBLE_LITERAL
 %token <int_value> INT_LITERAL BOOL_LITERAL N
 %token <str_value> STRING_LITERAL
 %token <identifier> IDENTIFIER
-%token VAR CONST FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
+%token VAR CONST TYPE CONTRACT FUNCTION IF ELSE FOR RETURN BREAK CONTINUE NIL
 %token BOOL_T INT_T DOUBLE_T STRING_T ASSET_T HASH_T AMOUNT_T PUBKEY_T SIG_T HEX_T
 
 %type <expression> expr bool_expr func_call_expr identifier_expr literal
@@ -46,6 +48,8 @@ int yyerror(const char *s);
 %type <parameter_list> parameter_list parameter
 %type <argument_list> argument_list
 %type <int_value> new_line
+%type <state_declaration> state_declarations state_declaration
+%type <contract_definition> contract_definition
 
 %nonassoc '=' ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN DECL_ASSIGN
 %left AND OR
@@ -69,8 +73,23 @@ definition_list:
 
 definition:
       func_definition             { $$ = alloc_definition(); add_func_definition_to_compiler($1); }
+    | contract_definition          { $$ = alloc_definition(); add_contract_definition_to_compiler($1); }
     | const_stmt                  { $$ = alloc_definition(); add_stmt_to_compiler($1); }
     | variable_declaration_stmt   { $$ = alloc_definition(); add_stmt_to_compiler($1); }
+    ;
+
+contract_definition:
+      TYPE IDENTIFIER CONTRACT '{' new_line_opt '}'                                  { $$ = alloc_contract_definition($2, NULL); }
+    | TYPE IDENTIFIER CONTRACT '{' new_line_opt state_declarations new_line_opt '}'  { $$ = alloc_contract_definition($2, $6); }
+    ;
+
+state_declarations:
+      state_declaration
+    | state_declarations new_line state_declaration  { $$ = chain_state_declaration($1, $3); }
+    ;
+
+state_declaration:
+      IDENTIFIER type_specifier { $$ = alloc_state_declaration($1, $2); }
     ;
 
 func_definition:

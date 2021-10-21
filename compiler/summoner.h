@@ -38,12 +38,12 @@ typedef enum
     INT_TYPE,
     DOUBLE_TYPE,
     STRING_TYPE,
+    HEX_TYPE,
     ASSET_TYPE,
     HASH_TYPE,
     AMOUNT_TYPE,
     PUBKEY_TYPE,
     SIG_TYPE,
-    HEX_TYPE,
     VOID_TYPE,
     STRUCT_TYPE,
 } BasicType;
@@ -252,6 +252,24 @@ FuncDefinition *alloc_func_definition(char *name, ParameterList *parameters, Typ
 FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition *next);
 Declaration *chain_declaration_list(Declaration *list, Declaration *declaration);
 
+typedef struct StateDeclaration
+{
+    char *name;
+    TypeSpecifier *type;
+    struct StateDeclaration *next;
+} StateDeclaration;
+
+StateDeclaration *alloc_state_declaration(char *name, TypeSpecifier *type);
+StateDeclaration *chain_state_declaration(StateDeclaration *list, StateDeclaration *declaration);
+
+typedef struct ContractDefinition
+{
+    char *name;
+    StateDeclaration *state_declarations;
+} ContractDefinition;
+
+ContractDefinition *alloc_contract_definition(char *name, StateDeclaration *declarations);
+
 typedef struct Definition {} Definition;
 typedef struct DefinitionList {} DefinitionList;
 
@@ -330,6 +348,7 @@ typedef struct Compiler
 {
     int svm_constant_count;
     SVM_Constant *svm_constant;
+    ContractDefinition *contract_definition;
     int function_count;
     FuncDefinition *func_definition_list;
     int            svm_function_count;
@@ -346,6 +365,7 @@ void increment_line_number();
 void set_current_compiler(Compiler *compiler);
 void add_stmt_to_compiler(Statement *stmt);
 void add_func_definition_to_compiler(FuncDefinition *func_definition);
+void add_contract_definition_to_compiler(ContractDefinition *contract_definition);
 
 typedef struct
 {

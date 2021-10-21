@@ -323,6 +323,38 @@ FuncDefinition *chain_func_definition_list(FuncDefinition *list, FuncDefinition 
     return list;
 }
 
+StateDeclaration *alloc_state_declaration(char *name, TypeSpecifier *type)
+{
+    StateDeclaration *declaration = malloc(sizeof(StateDeclaration));
+    declaration->name = name;
+    declaration->type = type;
+    declaration->next = NULL;
+    return declaration;
+}
+
+StateDeclaration *chain_state_declaration(StateDeclaration *list, StateDeclaration *declaration)
+{
+    if (list == NULL)
+    {
+        return declaration;
+    }
+
+    StateDeclaration *pos;
+    for (pos = list; pos->next; pos = pos->next)
+        ;
+
+    pos->next = declaration;
+    return list;
+}
+
+ContractDefinition *alloc_contract_definition(char *name, StateDeclaration *declarations)
+{
+    ContractDefinition *definition = malloc(sizeof(ContractDefinition));
+    definition->name = name;
+    definition->state_declarations = declarations;
+    return definition;
+}
+
 Definition *alloc_definition()
 {
     return (Definition *)malloc(sizeof(Definition));
